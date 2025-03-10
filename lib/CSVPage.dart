@@ -3,14 +3,12 @@ import 'dart:html' as html;
 import 'package:flutter/material.dart';
 import 'package:csv/csv.dart';
 
-class MainPage extends StatefulWidget {
-  const MainPage({super.key});
-
+class CSVPage extends StatefulWidget {
   @override
-  _MainPageState createState() => _MainPageState();
+  _CSVPageState createState() => _CSVPageState();
 }
 
-class _MainPageState extends State<MainPage> {
+class _CSVPageState extends State<CSVPage> {
   List<List<dynamic>> _csvData = []; // CSV 데이터를 저장하는 리스트
   bool _isSortedAscending = true; // true: 오름차순, false: 내림차순
   String _sortColumn = "이름"; // 기본 정렬 컬럼
@@ -167,6 +165,7 @@ class _MainPageState extends State<MainPage> {
                 ],
 
                 // 📌 CSV 데이터 행 생성 (클릭 시 수정 가능)
+                //note 학습필요
                 rows: _csvData.asMap().entries.map((entry) {
                   int index = entry.key;
                   List<dynamic> row = entry.value;
