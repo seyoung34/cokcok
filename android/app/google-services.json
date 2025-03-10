@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "9711185463",
+    "project_id": "cokcok-27bab",
+    "storage_bucket": "cokcok-27bab.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:9711185463:android:75ecd10406dec759c259b2",
+        "android_client_info": {
+          "package_name": "com.example.cokcok"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAxohH-MKTI_GRh_LDAaE-KOSJUkjyHOoo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
