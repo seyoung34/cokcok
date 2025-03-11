@@ -102,8 +102,8 @@ class _TeamManagementPageState extends State<TeamManagementPage> {
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // _buildTeamSection("여성 복식", femaleTeams),
-                  // _buildTeamSection("혼성 복식", mixedTeams),
+                  _buildTeamSection("여성 복식", femaleTeams),
+                  _buildTeamSection("혼성 복식", mixedTeams),
                   _buildTeamSection("남성 복식", maleTeams),
                 ],
               ),
