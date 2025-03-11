@@ -1,5 +1,3 @@
-
-
 import 'Player.dart';
 
 class Team {
@@ -33,4 +31,9 @@ class Team {
     division: json['division'],
     isManual: json['isManual'],
   );
+
+  List<Player> toListPlayer() {
+    return [player1, player2];
+  }
+
 }

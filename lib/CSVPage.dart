@@ -1,7 +1,10 @@
+import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import 'dart:html' as html;
 import 'package:flutter/material.dart';
 import 'package:csv/csv.dart';
+
+import 'model/Player.dart';
 
 class CSVPage extends StatefulWidget {
   @override
@@ -135,7 +138,7 @@ class _CSVPageState extends State<CSVPage> {
     ];
   }
 
-  Widget _buildDataTable(List<List<dynamic>> data, String title, Function(String) sortFunction) {
+  Widget _buildDataTable(List<List<dynamic>> data,String title, int columIndex, bool sortedAscend, Function(String) sortFunction) {
     return Expanded(
       child: Column(
         children: [
@@ -146,6 +149,8 @@ class _CSVPageState extends State<CSVPage> {
             scrollDirection: Axis.horizontal,
             child: DataTable(
               headingRowColor: WidgetStateProperty.all(Colors.grey[300]),
+              // sortColumnIndex: columIndex,
+              sortAscending: sortedAscend,
               columns: _buildTableColumns(sortFunction),
               rows: _buildTableRows(data),
             ),
@@ -178,6 +183,55 @@ class _CSVPageState extends State<CSVPage> {
     }).toList();
   }
 
+  // List<player>를 반환
+  List<Player> getPlayersFromCSV(List<List<dynamic>> csvData) {
+    return csvData.map((row) => Player(
+        name: row[0].toString(),
+        gender: row[1].toString(),
+        rank: int.parse(row[2].toString()), // 정수 변환
+        // rank: row[2].toInt()
+    )).toList();
+  }
+
+
+  // csvData를 변환 후 저장하기
+  Future<void> savePlayersToSharedPreferences(List<Player> players, String key) async {
+  final prefs = await SharedPreferences.getInstance();
+  List<String> playersJson = players.map((player) => jsonEncode(player.toJson())).toList();
+  print("📌 List<String> playersJson: $playersJson");
+
+  await prefs.setStringList(key, playersJson);
+  print("📌 [$key] 저장 완료: $playersJson");
+
+  // 저장된 모든 키 확인 (디버깅)
+  final keys = prefs.getKeys();
+  print("📌 현재 저장된 키 목록: $keys");
+  }
+
+
+  //sharedPreference에서 불러오기
+  Future<List<Player>> loadPlayersFromSharedPreferences(String key) async {
+    final prefs = await SharedPreferences.getInstance();
+    List<String>? playersJson = prefs.getStringList(key);
+
+    if (playersJson == null) return []; // 저장된 데이터가 없을 경우 빈 리스트 반환
+
+    List<Player> players = playersJson.map((json) => Player.fromJson(jsonDecode(json))).toList();
+    print("📌 [$key] 불러오기 완료: $players");
+    return players;
+  }
+
+  void callSavePlayersToSharedPreferences(){
+    if (_malePlayers.isNotEmpty || _femalePlayers.isNotEmpty) {
+      savePlayersToSharedPreferences(getPlayersFromCSV(_malePlayers), "남성 참가자");
+      savePlayersToSharedPreferences(getPlayersFromCSV(_femalePlayers), "여성 참가자");
+      print("📌 참가자 데이터 저장 완료.");
+    }
+  }
+
+
+
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -188,10 +242,14 @@ class _CSVPageState extends State<CSVPage> {
             padding: const EdgeInsets.all(8.0),
             child: ElevatedButton(onPressed: _pickCSVFile, child: Text("CSV 파일 업로드")),
           ),
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: ElevatedButton(onPressed: callSavePlayersToSharedPreferences, child: Text("저장하기")),
+          ),
           Row(
             children: [
-              _buildDataTable(_malePlayers, "남자 참가자", _sortMaleTable),
-              _buildDataTable(_femalePlayers, "여자 참가자", _sortFemaleTable),
+              _buildDataTable(_malePlayers, "남자 참가자", _getColumnIndex("이름"), _maleIsSortedAscending,_sortMaleTable),
+              _buildDataTable(_femalePlayers, "여자 참가자", _getColumnIndex("이름"), _femaleIsSortedAscending, _sortFemaleTable),
             ],
           )
         ],
