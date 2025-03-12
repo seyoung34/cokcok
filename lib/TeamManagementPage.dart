@@ -3,9 +3,9 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:drag_and_drop_lists/drag_and_drop_lists.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-// import '../model/team.dart';
+
 import 'model/Player.dart';
-import 'model/Team_update.dart';
+import 'model/Team.dart';
 
 class TeamManagementPage extends StatefulWidget {
   @override

@@ -16,17 +16,17 @@ class Player {
   // JSON 변환 함수 (Firebase 저장 고려)
   Map<String, dynamic> toJson() => {
     // 'id': id,
-    'name': name,
-    'gender': gender,
-    'rank': rank,
-    'division': division,
+    '이름': name,
+    '성별': gender,
+    '순위': rank,
+    '부': division,
   };
 
   static Player fromJson(Map<String, dynamic> json) => Player(
     // id: json['id'],
-    name: json['name'],
-    gender: json['gender'],
-    rank: json['rank'],
-    division: json['division'],
+    name: json['이름'],
+    gender: json['성별'],
+    rank: json['순위'],
+    division: json['부'],
   );
 }

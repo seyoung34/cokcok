@@ -1,4 +1,4 @@
-import 'Team_update.dart';
+import 'Team.dart';
 
 class Division {
   final int divisionNumber; // 1부, 2부, 3부

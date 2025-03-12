@@ -1,4 +1,4 @@
-import 'Team_update.dart';
+import 'Team.dart';
 
 class Match {
   final String id; // 고유 ID
