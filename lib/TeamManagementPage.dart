@@ -54,6 +54,7 @@ class _TeamManagementPageState extends State<TeamManagementPage> {
   Future<void> _generateTeams() async {
     List<Player> males = await _loadPlayers("남성 참가자");
     List<Player> females = await _loadPlayers("여성 참가자");
+    List<Player> mixed = await _loadPlayers("혼복 참가자");
 
     // ✅ 실력 순으로 정렬
     males.sort((a, b) => a.rank.compareTo(b.rank));

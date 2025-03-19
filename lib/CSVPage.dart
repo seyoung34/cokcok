@@ -301,7 +301,7 @@ class _CSVPageState extends State<CSVPage> {
     );
   }
 
-
+  // 다이얼로그의 텍스트입력필드
   Widget _buildTextField(String label, TextEditingController controller) {
     return TextField(
         controller: controller, decoration: InputDecoration(labelText: label));
@@ -357,7 +357,7 @@ class _CSVPageState extends State<CSVPage> {
   }
 
 
-
+  // 컬럼 리스트 반환
   List<DataColumn> _buildTableColumns(Function(String) sortFunction) {
     return [
       DataColumn(label: Text("이름"), onSort: (_, __) => sortFunction("이름")),
@@ -366,6 +366,7 @@ class _CSVPageState extends State<CSVPage> {
     ];
   }
 
+  // 테이블 행 데이터 반환
   List<DataRow> _buildTableRows(List<Player> data, TableType tableType) {
     return data.asMap().entries.map((entry) {
       // 키 : 인덱스, 값 : 속성
@@ -383,7 +384,7 @@ class _CSVPageState extends State<CSVPage> {
     }).toList();
   }
 
-  //Player 데이터 저장하기
+  //Player 데이터 sharedPreference에 저장하기
   Future<void> savePlayersToSharedPreferences(List<Player> players, String key) async {
     final prefs = await SharedPreferences.getInstance();
     List<String> playersJson =
@@ -391,7 +392,7 @@ class _CSVPageState extends State<CSVPage> {
     await prefs.setStringList(key, playersJson);
   }
 
-  //sharedPreference에서 불러오기
+  //sharedPreference에서 List<Player>를 불러오기
   Future<List<Player>> loadPlayersFromSharedPreferences(String key) async {
     final prefs = await SharedPreferences.getInstance();
     List<String>? playersJson = prefs.getStringList(key);
@@ -404,14 +405,15 @@ class _CSVPageState extends State<CSVPage> {
     return players;
   }
 
+  // sharedPreference 저장하는 함수 종류별 호출
   void callSavePlayersToSharedPreferences() {
     savePlayersToSharedPreferences(_malePlayers, "남성 참가자");
     savePlayersToSharedPreferences(_femalePlayers, "여성 참가자");
     savePlayersToSharedPreferences(_mixedPlayers, "혼복 참가자");
-
     loadTableData();
   }
 
+  //sharedPreference에서 불러와서 데이터 셋팅, 자동 ui변경
   void loadTableData() async {
     setState(() {
       _malePlayers = [];
@@ -432,6 +434,7 @@ class _CSVPageState extends State<CSVPage> {
     print("📌 SharedPreferences 데이터 로드 완료.");
   }
 
+  //sharedPreference의 데이터 삭제(남성,여성,혼복 참가자)
   void deleteData() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove("남성 참가자");
@@ -445,7 +448,7 @@ class _CSVPageState extends State<CSVPage> {
   }
 
 
-  //확인버튼
+  // 확인 버튼 ( 파일을 업로드 후 1행 제거, 성별과 혼복여부에 따라 데이터 분류
   void convertFileButton(){
     if(selectedFile != null) { //업로드 되어 있으면
       _convertCSVToPlayers(_csvData.sublist(1));  //sharedPrefenece에 변환해서 저장됨
