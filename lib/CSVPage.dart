@@ -330,7 +330,7 @@ class _CSVPageState extends State<CSVPage> {
                 ? Center(child: Text("데이터 없음"))
                 : Expanded(
                   child: SingleChildScrollView(
-                  scrollDirection: Axis.horizontal, // 🔹 세로 스크롤 추가
+                  scrollDirection: Axis.vertical, // 🔹 세로 스크롤 추가
                   child: SizedBox(
                     width: 400,
                     child: DataTable(

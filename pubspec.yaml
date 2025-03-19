@@ -38,6 +38,7 @@ dependencies:
   csv: ^5.1.1
   drag_and_drop_lists: ^0.4.0
   shared_preferences: ^2.5.2
+  super_drag_and_drop: ^0.8.24
 
 dev_dependencies:
   flutter_test:
