@@ -259,7 +259,8 @@ class _TeamManagementPageState extends State<TeamManagementPage> {
             child: Container(
                 padding: EdgeInsets.all(8),
                 color: Colors.grey.shade200,
-                child: _buildTeamSection("${selectedCategory!} ${index + 1}부",divisionTeams, Colors.blue.shade100)
+                child: _buildTeamSection("${selectedCategory!} ${index + 1}부",divisionTeams,
+                    selectedTeams == mixedTeams ? Colors.green.shade100 : selectedTeams == maleTeams ? Colors.blue.shade100 : Colors.pink.shade100)
             )
           )
         );
@@ -357,12 +358,6 @@ class _TeamManagementPageState extends State<TeamManagementPage> {
     return GridView.builder(
       shrinkWrap: true,
       physics: NeverScrollableScrollPhysics(),
-      // gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-      //   crossAxisCount: 2, // ✅ 2열 배치
-      //   crossAxisSpacing: 16,
-      //   mainAxisSpacing: 16,
-      //   childAspectRatio: 1.5, // ✅ 팀 박스의 가로/세로 비율 조정
-      // ),
       gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
         maxCrossAxisExtent: 250, // 한 열의 최대 크기 지정 (250px 이상이면 다음 행으로)
         crossAxisSpacing: 16, // 열 간 간격
@@ -381,72 +376,79 @@ class _TeamManagementPageState extends State<TeamManagementPage> {
             });
           },
           builder: (context, candidateData, rejectedData) {
-            return Container(
-              decoration: BoxDecoration(
-                color: color,
-                borderRadius: BorderRadius.circular(10),
-              ),
-              padding: EdgeInsets.all(8),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-
-                  Text( //note 팀 이름 부분
-                    teams[index].id,
-                    style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+            return LayoutBuilder(
+              builder: (context, constraints) {
+                return Container(
+                  height: constraints.maxHeight, // ✅ 부모 컨테이너의 높이를 고정
+                  decoration: BoxDecoration(
+                    color: color,
+                    borderRadius: BorderRadius.circular(10),
                   ),
-                  SizedBox(height: 10),
+                  padding: EdgeInsets.all(5),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center, // ✅ 전체적으로 중앙 정렬
+                    children: [
+                      Text(
+                        teams[index].id,
+                        style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+                      ),
+                      SizedBox(height: 10),
+                      SizedBox(
+                        height: constraints.maxHeight * 0.5, // ✅ Wrap이 차지할 공간 확보
+                        child: Center(
+                          child: Wrap(
+                            alignment: WrapAlignment.center, // ✅ Wrap 내부 아이템 중앙 정렬
+                            crossAxisAlignment: WrapCrossAlignment.center,
+                            runSpacing: 10,
+                            spacing: 10,
+                            children: teams[index].players.map((player) {
+                              return LayoutBuilder(
+                                builder: (context, constraints) {
+                                  double itemWidth = constraints.maxWidth * 0.4;
+                                  itemWidth = itemWidth < 40 ? 40 : itemWidth; // ✅ 최소 너비 제한
 
-                  Expanded(
-                    child: Wrap(
-                      alignment: WrapAlignment.center,
-                      crossAxisAlignment: WrapCrossAlignment.center,
-                      runSpacing: 10,
-                      spacing: 10,
-                      children: teams[index].players.map((player) {
-                        return LayoutBuilder(
-                          builder: (context, constraints) {
-                            double itemWidth = constraints.maxWidth * 0.4;
-                            double itemHeight = constraints.maxHeight * 0.2;
-                            itemWidth = itemWidth < 40 ? 40 : itemWidth; // ✅ 최소 너비 제한
-                            itemHeight = itemHeight < 40 ? 40 : itemHeight; // ✅ 최소 높이 제한
-                            return Draggable<Player>(
-                              data: player,
-
-                              feedback: Material(
-                                child: Container(
-                                  padding: EdgeInsets.all(8),
-                                  color: Colors.teal,
-                                  child: Text(player.name, style: TextStyle(color: Colors.white)),
-                                ),
-                              ),
-
-                              onDragStarted: () => setState(() => _removePlayerFromTeams(player)),
-                              onDraggableCanceled: (_, __) => setState(() => teams[index].players.add(player)),
-
-                              child: Container(
-                                alignment: Alignment.center,
-                                width: itemWidth,
-                                height: 40,
-                                padding: EdgeInsets.all(8),
-                                color: Colors.white,
-                                child: Center(child: Text(player.name, style: TextStyle(fontSize: itemWidth *0.2),)),
-                              ),
-                            );
-                          },
-                        );
-                      }).toList(),
-                    ),
+                                  return Draggable<Player>(
+                                    data: player,
+                                    feedback: Material(
+                                      child: Container(
+                                        padding: EdgeInsets.all(8),
+                                        color: Colors.teal,
+                                        child: Text(player.name, style: TextStyle(color: Colors.white)),
+                                      ),
+                                    ),
+                                    onDragStarted: () => setState(() => _removePlayerFromTeams(player)),
+                                    onDraggableCanceled: (_, __) => setState(() => teams[index].players.add(player)),
+                                    child: Container(
+                                      alignment: Alignment.center,
+                                      height: 40,
+                                      width: itemWidth,
+                                      padding: EdgeInsets.all(8),
+                                      color: Colors.white,
+                                      child: Center(
+                                        child: Text(
+                                          player.name,
+                                          style: TextStyle(fontSize: itemWidth * 0.2),
+                                        ),
+                                      ),
+                                    ),
+                                  );
+                                },
+                              );
+                            }).toList(),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                ],
-              ),
+                );
+              },
             );
           },
         );
       },
     );
   }
+
 
   void _removePlayerFromTeams(Player player) {
     setState(() {
