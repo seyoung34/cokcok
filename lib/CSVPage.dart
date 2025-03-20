@@ -39,7 +39,7 @@ class _CSVPageState extends State<CSVPage> {
   @override
   void initState() {
     super.initState();
-    loadTableData();
+    // loadTableData();
     _loadPlayersFromFirestore();
   }
 
@@ -266,34 +266,93 @@ class _CSVPageState extends State<CSVPage> {
   }
 
   // 참가자 정보 수정 다이얼로그
-  void _editParticipant(int index, TableType tableType) {
-    String tableName = tableType == TableType.male
-        ? "남자 참가자"
-        : tableType == TableType.female
-        ? "여자 참가자"
-        : "혼복 참가자";
-
-    Player selectedPlayer;
-    if (tableType == TableType.male) {
-      selectedPlayer = _malePlayers[index];
-    } else if (tableType == TableType.female) {
-      selectedPlayer = _femalePlayers[index];
-    } else {
-      selectedPlayer = _mixedPlayers[index];
-    }
-
-    TextEditingController nameController =
-    TextEditingController(text: selectedPlayer.name);
-    TextEditingController genderController =
-    TextEditingController(text: selectedPlayer.gender);
-    TextEditingController rankController =
-    TextEditingController(text: selectedPlayer.rank.toString());
+  // void _editParticipant(int index, TableType tableType) {
+  //   String tableName = tableType == TableType.male
+  //       ? "남자 참가자"
+  //       : tableType == TableType.female
+  //       ? "여자 참가자"
+  //       : "혼복 참가자";
+  //
+  //   Player selectedPlayer;
+  //   if (tableType == TableType.male) {
+  //     selectedPlayer = _malePlayers[index];
+  //   } else if (tableType == TableType.female) {
+  //     selectedPlayer = _femalePlayers[index];
+  //   } else {
+  //     selectedPlayer = _mixedPlayers[index];
+  //   }
+  //
+  //   TextEditingController nameController =
+  //   TextEditingController(text: selectedPlayer.name);
+  //   TextEditingController genderController =
+  //   TextEditingController(text: selectedPlayer.gender);
+  //   TextEditingController rankController =
+  //   TextEditingController(text: selectedPlayer.rank.toString());
+  //
+  //   showDialog(
+  //     context: context,
+  //     builder: (BuildContext context) {
+  //       return AlertDialog(
+  //         title: Text("$tableName 참가자 정보 수정"),
+  //         content: Column(
+  //           mainAxisSize: MainAxisSize.min,
+  //           children: [
+  //             _buildTextField("이름", nameController),
+  //             _buildTextField("성별 (남/여)", genderController),
+  //             _buildTextField("순위", rankController),
+  //           ],
+  //         ),
+  //         actions: [
+  //           TextButton(
+  //               onPressed: () => Navigator.pop(context), child: Text("취소")),
+  //           TextButton(
+  //             onPressed: () {
+  //               setState(() {
+  //                 Player editedPlayer = Player(
+  //                   name: nameController.text,
+  //                   gender: genderController.text,
+  //                   rank: int.parse(rankController.text),
+  //                   isMixed: selectedPlayer.isMixed
+  //                 );
+  //
+  //                 // 변경된 데이터를 리스트에 적용
+  //                 switch (tableType) {
+  //                   case TableType.male:
+  //                     _malePlayers[index] = editedPlayer;
+  //                     savePlayersToSharedPreferences(_malePlayers, "남성 참가자");
+  //                     break;
+  //                   case TableType.female:
+  //                     _femalePlayers[index] = editedPlayer;
+  //                     savePlayersToSharedPreferences(_femalePlayers, "여성 참가자");
+  //                     break;
+  //                   case TableType.mixed:
+  //                     _mixedPlayers[index] = editedPlayer;
+  //                     savePlayersToSharedPreferences(_mixedPlayers, "혼복 참가자");
+  //                     break;
+  //                 }
+  //               });
+  //
+  //               print("📌 수정된 데이터 SharedPreferences에 저장 완료.");
+  //               Navigator.pop(context);
+  //             },
+  //             child: Text("저장"),
+  //           ),
+  //         ],
+  //       );
+  //     },
+  //   );
+  // }
+  // 📌 참가자 정보 수정 다이얼로그
+  void _editParticipant(Player player) {
+    TextEditingController nameController = TextEditingController(text: player.name);
+    TextEditingController genderController = TextEditingController(text: player.gender);
+    TextEditingController rankController = TextEditingController(text: player.rank.toString());
 
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Text("$tableName 참가자 정보 수정"),
+          title: Text("참가자 정보 수정"),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -304,35 +363,20 @@ class _CSVPageState extends State<CSVPage> {
           ),
           actions: [
             TextButton(
-                onPressed: () => Navigator.pop(context), child: Text("취소")),
+              onPressed: () => Navigator.pop(context),
+              child: Text("취소"),
+            ),
             TextButton(
               onPressed: () {
                 setState(() {
-                  Player editedPlayer = Player(
-                    name: nameController.text,
-                    gender: genderController.text,
-                    rank: int.parse(rankController.text),
-                    isMixed: selectedPlayer.isMixed
-                  );
-
-                  // 변경된 데이터를 리스트에 적용
-                  switch (tableType) {
-                    case TableType.male:
-                      _malePlayers[index] = editedPlayer;
-                      savePlayersToSharedPreferences(_malePlayers, "남성 참가자");
-                      break;
-                    case TableType.female:
-                      _femalePlayers[index] = editedPlayer;
-                      savePlayersToSharedPreferences(_femalePlayers, "여성 참가자");
-                      break;
-                    case TableType.mixed:
-                      _mixedPlayers[index] = editedPlayer;
-                      savePlayersToSharedPreferences(_mixedPlayers, "혼복 참가자");
-                      break;
-                  }
+                  player.name = nameController.text;
+                  player.gender = genderController.text;
+                  player.rank = int.tryParse(rankController.text) ?? player.rank;
                 });
 
-                print("📌 수정된 데이터 SharedPreferences에 저장 완료.");
+                _firestore.collection("참가자").doc(player.name).set(player.toJson());
+                print("📌 참가자 정보 Firestore에 저장됨");
+                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("참가자 정보 firestore에 저장됨")));
                 Navigator.pop(context);
               },
               child: Text("저장"),
@@ -341,6 +385,7 @@ class _CSVPageState extends State<CSVPage> {
         );
       },
     );
+
   }
 
   // 다이얼로그의 텍스트입력필드
@@ -434,7 +479,7 @@ class _CSVPageState extends State<CSVPage> {
           DataCell(Text(player.gender)), // 성별
           DataCell(Text(player.rank.toString())), // 순위 (int → String 변환)
         ],
-        onLongPress: () => _editParticipant(index, tableType),
+        onLongPress: () => _editParticipant(player),
       );
     }).toList();
   }
@@ -462,61 +507,61 @@ class _CSVPageState extends State<CSVPage> {
   }
 
   // sharedPreference 저장하는 함수 종류별 호출
-  void callSavePlayersToSharedPreferences() {
-    savePlayersToSharedPreferences(_malePlayers, "남성 참가자");
-    savePlayersToSharedPreferences(_femalePlayers, "여성 참가자");
-    savePlayersToSharedPreferences(_mixedPlayers, "혼복 참가자");
-    loadTableData();
-  }
+  // void callSavePlayersToSharedPreferences() {
+  //   savePlayersToSharedPreferences(_malePlayers, "남성 참가자");
+  //   savePlayersToSharedPreferences(_femalePlayers, "여성 참가자");
+  //   savePlayersToSharedPreferences(_mixedPlayers, "혼복 참가자");
+  //   loadTableData();
+  // }
 
   //sharedPreference에서 불러와서 데이터 셋팅, 자동 ui변경
-  void loadTableData() async {
-    setState(() {
-      _malePlayers = [];
-      _femalePlayers = [];
-      _mixedPlayers = [];
-    });
-
-    List<Player> maleData = await loadPlayersFromSharedPreferences("남성 참가자");
-    List<Player> femaleData = await loadPlayersFromSharedPreferences("여성 참가자");
-    List<Player> mixedData = await loadPlayersFromSharedPreferences("혼복 참가자");
-
-    setState(() {
-      _malePlayers = maleData;
-      _femalePlayers = femaleData;
-      _mixedPlayers = mixedData;
-    });
-
-    print("📌 SharedPreferences 데이터 로드 완료.");
-  }
+  // void loadTableData() async {
+  //   setState(() {
+  //     _malePlayers = [];
+  //     _femalePlayers = [];
+  //     _mixedPlayers = [];
+  //   });
+  //
+  //   List<Player> maleData = await loadPlayersFromSharedPreferences("남성 참가자");
+  //   List<Player> femaleData = await loadPlayersFromSharedPreferences("여성 참가자");
+  //   List<Player> mixedData = await loadPlayersFromSharedPreferences("혼복 참가자");
+  //
+  //   setState(() {
+  //     _malePlayers = maleData;
+  //     _femalePlayers = femaleData;
+  //     _mixedPlayers = mixedData;
+  //   });
+  //
+  //   print("📌 SharedPreferences 데이터 로드 완료.");
+  // }
 
   //sharedPreference의 데이터 삭제(남성,여성,혼복 참가자)
-  void deleteData() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove("남성 참가자");
-    await prefs.remove("여성 참가자");
-    await prefs.remove("혼복 참가자");
-
-    print("📌 SharedPreferences 데이터 삭제 완료.");
-
-    // 삭제 후 UI 업데이트
-    loadTableData();
-  }
+  // void deleteData() async {
+  //   final prefs = await SharedPreferences.getInstance();
+  //   await prefs.remove("남성 참가자");
+  //   await prefs.remove("여성 참가자");
+  //   await prefs.remove("혼복 참가자");
+  //
+  //   print("📌 SharedPreferences 데이터 삭제 완료.");
+  //
+  //   // 삭제 후 UI 업데이트
+  //   loadTableData();
+  // }
 
 
   // 확인 버튼 ( 파일을 업로드 후 1행 제거, 성별과 혼복여부에 따라 데이터 분류
-  void convertFileButton(){
-    if(selectedFile != null) { //업로드 되어 있으면
-      // _convertCSVToPlayers(_csvData.sublist(1));  //sharedPrefenece에 변환해서 저장됨
-
-      // SharedPreferences에서 데이터를 다시 불러와 테이블 업데이트
-      loadTableData();
-
-      setState(() {
-        selectedFile = null;
-      });
-    }
-  }
+  // void convertFileButton(){
+  //   if(selectedFile != null) { //업로드 되어 있으면
+  //     // _convertCSVToPlayers(_csvData.sublist(1));  //sharedPrefenece에 변환해서 저장됨
+  //
+  //     // SharedPreferences에서 데이터를 다시 불러와 테이블 업데이트
+  //     loadTableData();
+  //
+  //     setState(() {
+  //       selectedFile = null;
+  //     });
+  //   }
+  // }
 
 
   @override

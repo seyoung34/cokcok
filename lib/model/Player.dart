@@ -1,9 +1,9 @@
 class Player {
   // final String id; // 고유 ID
-  final String name; // 참가자 이름
-  final String gender; // 성별 (예: "M", "F")
-  final int rank; // 등수 (남녀 구분 없이 전체 등수)
-  final bool isMixed;
+  String name; // 참가자 이름
+  String gender; // 성별 (예: "M", "F")
+  int rank; // 등수 (남녀 구분 없이 전체 등수)
+  bool isMixed;
   int division; // 1부, 2부, 3부 (운영자가 조정 가능)
 
   Player({

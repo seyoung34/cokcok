@@ -37,10 +37,15 @@ class FirestoreService {
   }
 
   // 🔹 참가자 불러오기
-  Future<List<Player>> loadPlayers(String category) async {
-    QuerySnapshot snapshot = await _db.collection(category).get();
+  Future<List<Player>> loadPlayers(String category, String gender) async {
+    QuerySnapshot snapshot = await _db
+        .collection(category)
+        .where("성별", isEqualTo: gender) // 🔹 성별 필터 추가
+        .get();
+
     return snapshot.docs.map((doc) => Player.fromJson(doc.data() as Map<String, dynamic>)).toList();
   }
+
 
   // 🔹 경기 저장
   Future<void> saveMatches(List<Match> matches) async {

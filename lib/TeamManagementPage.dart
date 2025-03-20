@@ -57,6 +57,7 @@ class _TeamManagementPageState extends State<TeamManagementPage> {
   //     mixedTeams = _loadTeamList(prefs, "혼성 복식 팀");
   //   });
   // }
+  // firestore에서 팀 데이터 받아오기
   Future<void> _loadTeams() async {
     maleTeams = await _firestoreService.loadTeams("남성 복식 팀");
     femaleTeams = await _firestoreService.loadTeams("여성 복식 팀");
@@ -147,8 +148,10 @@ class _TeamManagementPageState extends State<TeamManagementPage> {
 
   // 📌 실력 균형 기반 팀 자동 구성
   Future<void> _generateTeams() async {
-    List<Player> males = await _firestoreService.loadPlayers("남성 참가자");
-    List<Player> females = await _firestoreService.loadPlayers("여성 참가자");
+    List<Player> males = await _firestoreService.loadPlayers("참가자","남");
+    List<Player> females = await _firestoreService.loadPlayers("참가자","여");
+
+    print(males.map((e) => e.name,));
 
     // ✅ 사용자 입력을 받아 몇 부로 나눌지 결정
     await _showDivisionDialog("남성 복식", males.length, (int maleDivisions) async {
