@@ -43,7 +43,16 @@ class FirestoreService {
         .where("성별", isEqualTo: gender) // 🔹 성별 필터 추가
         .get();
 
-    return snapshot.docs.map((doc) => Player.fromJson(doc.data() as Map<String, dynamic>)).toList();
+    if (snapshot.docs.isEmpty) {
+      print("Firestore에서 데이터를 찾을 수 없음: $category");
+      return [];
+    }
+
+    // return snapshot.docs.map((doc) => Player.fromJson(doc.data() as Map<String, dynamic>)).toList();
+    return snapshot.docs.map((doc) {
+      // print("📌 ${doc.id}: ${doc.data()}"); // Firestore 데이터 확인 로그
+      return Player.fromJson(doc.data() as Map<String, dynamic>);
+    }).toList();
   }
 
 
