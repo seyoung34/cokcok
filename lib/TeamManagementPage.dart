@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../services/firestore_service.dart';
@@ -22,12 +23,16 @@ class _TeamManagementPageState extends State<TeamManagementPage> {
   @override
   void initState() {
     super.initState();
+    print("init_1");
+    checkFirestoreData();
     _loadTeams();
+    print("init_2");
     _loadState();
   }
 
   @override
   Widget build(BuildContext context) {
+    print("빌드됨");
     return Scaffold(
       appBar: AppBar(title: Text("팀 구성")),
       body: Column(
@@ -48,45 +53,36 @@ class _TeamManagementPageState extends State<TeamManagementPage> {
     );
   }
 
-  // 📌 SharedPreferences에서 팀 데이터 불러오기
-  // Future<void> _loadTeams() async {
-  //   SharedPreferences prefs = await SharedPreferences.getInstance();
-  //   setState(() {
-  //     maleTeams = _loadTeamList(prefs, "남성 복식 팀");
-  //     femaleTeams = _loadTeamList(prefs, "여성 복식 팀");
-  //     mixedTeams = _loadTeamList(prefs, "혼성 복식 팀");
-  //   });
-  // }
+  void checkFirestoreData() async {
+    try {
+      var snapshot = await FirebaseFirestore.instance.collection("남성 복식 팀").get();
+      print("📌 Firestore 팀 데이터 개수: ${snapshot.docs.length}");
+      for (var doc in snapshot.docs) {
+        print("📌 ${doc.id}: ${doc.data()}");
+      }
+    } catch (e) {
+      print("❌ Firestore 데이터 로드 실패: $e");
+    }
+  }
+
+
   // firestore에서 팀 데이터 받아오기
   Future<void> _loadTeams() async {
+    print("_loadTeams");
     maleTeams = await _firestoreService.loadTeams("남성 복식 팀");
     femaleTeams = await _firestoreService.loadTeams("여성 복식 팀");
     mixedTeams = await _firestoreService.loadTeams("혼성 복식 팀");
     setState(() {});
   }
 
-  // 📌 SharedPreferences에서 리스트 변환
-  List<Team> _loadTeamList(SharedPreferences prefs, String key) {
-    String? jsonString = prefs.getString(key);
-    if (jsonString == null) return [];
-    List<dynamic> jsonList = jsonDecode(jsonString);
-    return jsonList.map((team) => Team.fromJson(team)).toList();
-  }
-
-  // 📌 팀 데이터 저장
-  // Future<void> _saveTeams() async {
-  //   SharedPreferences prefs = await SharedPreferences.getInstance();
-  //   await prefs.setString("남성 복식 팀", jsonEncode(maleTeams.map((t) => t.toJson()).toList()));
-  //   await prefs.setString("여성 복식 팀", jsonEncode(femaleTeams.map((t) => t.toJson()).toList()));
-  //   await prefs.setString("혼성 복식 팀", jsonEncode(mixedTeams.map((t) => t.toJson()).toList()));
-  //   await prefs.setString("divisionCounts", jsonEncode(divisionCounts));
-  // }
+  /// 📌 Firestore에 팀 데이터를 저장하는 함수
   Future<void> _saveTeams() async {
     await _firestoreService.saveTeams(maleTeams, "남성 복식 팀");
     await _firestoreService.saveTeams(femaleTeams, "여성 복식 팀");
     await _firestoreService.saveTeams(mixedTeams, "혼성 복식 팀");
   }
 
+  /// 📌 SharedPreferences에 현재 상태 저장
   Future<void> _saveState() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
 
@@ -99,6 +95,7 @@ class _TeamManagementPageState extends State<TeamManagementPage> {
     await prefs.setString("selectedCategory", selectedCategory ?? "");
   }
 
+  /// 📌 SharedPreferences에서 저장된 상태 불러오기
   Future<void> _loadState() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
 
@@ -151,15 +148,16 @@ class _TeamManagementPageState extends State<TeamManagementPage> {
     List<Player> males = await _firestoreService.loadPlayers("참가자","남");
     List<Player> females = await _firestoreService.loadPlayers("참가자","여");
 
-    print(males.map((e) => e.name,));
+    print(males.map((e) => e));
+    print(females.map((e) => e.name,));
 
     // ✅ 사용자 입력을 받아 몇 부로 나눌지 결정
     await _showDivisionDialog("남성 복식", males.length, (int maleDivisions) async {
       await _showDivisionDialog("여성 복식", females.length, (int femaleDivisions) async {
 
         // ✅ 실력 순으로 정렬
-        males.sort((a, b) => a.rank.compareTo(b.rank));
-        females.sort((a, b) => a.rank.compareTo(b.rank));
+        // males.sort((a, b) => a.rank.compareTo(b.rank));
+        // females.sort((a, b) => a.rank.compareTo(b.rank));
 
         // ✅ 각 Player 객체의 division 설정
         _assignDivisions(males, maleDivisions);
@@ -181,8 +179,8 @@ class _TeamManagementPageState extends State<TeamManagementPage> {
           };
         });
 
-        _saveTeams(); // ✅ 자동 저장
-        _saveState();
+        await _saveTeams(); // ✅ 자동 저장
+        await _saveState();
       });
     });
   }
@@ -195,30 +193,6 @@ class _TeamManagementPageState extends State<TeamManagementPage> {
       players[i].division = (i ~/ playersPerDivision) + 1;
     }
   }
-
-  // 📌 SharedPreferences에서 Player 데이터 불러오기
-  Future<List<Player>> _loadPlayers(String key) async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    List<String>? playersJson = prefs.getStringList(key);
-    if (playersJson == null) return [];
-    return playersJson.map((json) => Player.fromJson(jsonDecode(json))).toList();
-  }
-
-  // 📌 참가자 리스트를 입력받아 n개의 부로 나누는 함수
-  Map<int, List<Player>> _dividePlayersIntoDivisions(List<Player> players, int divisionCount) {
-    Map<int, List<Player>> divisions = {};
-    int playersPerDivision = (players.length / divisionCount).ceil();
-
-    for (int i = 0; i < divisionCount; i++) {
-      divisions[i + 1] = players.sublist(
-          i * playersPerDivision,
-          (i + 1) * playersPerDivision > players.length ? players.length : (i + 1) * playersPerDivision
-      );
-    }
-
-    return divisions;
-  }
-
 
 
   // 📌 상단 카테고리 선택 라디오 버튼
@@ -233,7 +207,6 @@ class _TeamManagementPageState extends State<TeamManagementPage> {
               groupValue: selectedCategory,
               onChanged: (value) {
                 setState(() {
-                  // selectedCategory = (selectedCategory == value) ? null : value; // 선택 취소 가능
                   selectedCategory = value;
                   _saveState();
                 });
@@ -252,16 +225,11 @@ class _TeamManagementPageState extends State<TeamManagementPage> {
   Widget _buildSelectedCategoryView() {
     if (selectedCategory == null) return Container(); // 아무것도 선택되지 않으면 빈 화면
 
-    List<Team> selectedTeams;
-    if (selectedCategory == "남성") {
-      selectedTeams = maleTeams;
-    }
-    else if (selectedCategory == "여성") {
-      selectedTeams = femaleTeams;
-    }
-    else {
-      selectedTeams = mixedTeams;
-    }
+    List<Team> selectedTeams = selectedCategory == "남성"
+        ? maleTeams
+        : selectedCategory == "여성"
+        ? femaleTeams
+        : mixedTeams;
 
     int divisionCount = divisionCounts[selectedCategory] ?? 1;
 
@@ -346,8 +314,8 @@ class _TeamManagementPageState extends State<TeamManagementPage> {
   // 📌 GridView 형태의 팀 섹션을 생성
   // 부 단위
   Widget _buildTeamSection(String title, List<Team> teams, Color color) {
-    return Expanded(
-      child: Column(
+    return
+      Column(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Padding(
@@ -365,8 +333,7 @@ class _TeamManagementPageState extends State<TeamManagementPage> {
           )
               : _buildDraggableGridView(teams, color),  //데이터 있을 시 진짜로 그리드뷰 그리는 함수
         ],
-      ),
-    );
+      );
   }
 
   // 📌 Drag & Drop이 가능한 팀 목록 (GridView 형식)

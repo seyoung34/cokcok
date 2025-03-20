@@ -70,7 +70,7 @@ class _CSVPageState extends State<CSVPage> {
       _mixedPlayers = mixedList;
     });
 
-    print("📌 Firestore에서 참가자 데이터 로드 완료");
+    print("📌 Firestore에서 참가자 데이터 로드 완료...CSVPage");
   }
 
 

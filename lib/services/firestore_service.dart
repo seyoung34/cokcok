@@ -21,6 +21,8 @@ class FirestoreService {
   // 🔹 팀 불러오기
   Future<List<Team>> loadTeams(String category) async {
     QuerySnapshot snapshot = await _db.collection(category).get();
+    print("~~~$category");
+    print(snapshot.docs.map((e) => e.data()));
     return snapshot.docs.map((doc) => Team.fromJson(doc.data() as Map<String, dynamic>)).toList();
   }
 
