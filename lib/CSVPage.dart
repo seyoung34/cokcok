@@ -3,8 +3,9 @@ import 'dart:convert';
 import 'dart:html' as html;
 import 'package:flutter/material.dart';
 import 'package:csv/csv.dart';
-
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'model/Player.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 
 class CSVPage extends StatefulWidget {
   @override
@@ -16,6 +17,8 @@ enum TableType { male, female, mixed }
 class _CSVPageState extends State<CSVPage> {
   List<List<dynamic>> _csvData = []; // CSV 데이터
   String? selectedFile;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+
   List<List<Player>> playerList = []; //male,femal,mixed
 
   // 남성 참가자 테이블 데이터
@@ -37,6 +40,37 @@ class _CSVPageState extends State<CSVPage> {
   void initState() {
     super.initState();
     loadTableData();
+    _loadPlayersFromFirestore();
+  }
+
+  // 📌 Firestore에서 참가자 데이터 불러오기
+  Future<void> _loadPlayersFromFirestore() async {
+    List<Player> maleList = [];
+    List<Player> femaleList = [];
+    List<Player> mixedList = [];
+
+    QuerySnapshot snapshot = await _firestore.collection("참가자").get();
+
+    for (var doc in snapshot.docs) {
+      Player player = Player.fromJson(doc.data() as Map<String, dynamic>);
+      if (player.gender == "남") {
+        maleList.add(player);
+      } else if (player.gender == "여") {
+        femaleList.add(player);
+      }
+      if (player.isMixed) {
+        mixedList.add(player);
+      }
+
+    }
+
+    setState(() {
+      _malePlayers = maleList;
+      _femalePlayers = femaleList;
+      _mixedPlayers = mixedList;
+    });
+
+    print("📌 Firestore에서 참가자 데이터 로드 완료");
   }
 
 
@@ -67,41 +101,84 @@ class _CSVPageState extends State<CSVPage> {
     });
   }
 
-  void _convertCSVToPlayers(List<List<dynamic>> csvData) {
-    List<Player> malePlayers = [];
-    List<Player> femalePlayers = [];
-    List<Player> mixedPlayers = [];
+  // 📌 Firestore에 참가자 저장
+  Future<void> _savePlayersToFirestore(List<Player> players) async {
+    WriteBatch batch = _firestore.batch();
+    CollectionReference collectionRef = _firestore.collection("참가자");
 
-    for (var row in csvData) {
+    for (var player in players) {
+      DocumentReference docRef = collectionRef.doc(player.name);
+      batch.set(docRef, player.toJson());
+    }
+
+    await batch.commit();
+    print("📌 Firestore에 참가자 저장 완료");
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text("저장 완료!")),
+    );
+
+    _loadPlayersFromFirestore(); // 저장 후 데이터 새로 불러오기
+  }
+
+  // void _convertCSVToPlayers(List<List<dynamic>> csvData) {
+  //   List<Player> malePlayers = [];
+  //   List<Player> femalePlayers = [];
+  //   List<Player> mixedPlayers = [];
+  //
+  //   for (var row in csvData) {
+  //     try {
+  //       Player player = Player(
+  //         name: row[0].toString(),
+  //         gender: row[1].toString(),
+  //         rank: int.tryParse(row[2].toString()) ?? 0, // 변환 실패 시 기본값 0
+  //       );
+  //
+  //       // 성별을 기준으로 분류
+  //       if (player.gender == "남") {
+  //         malePlayers.add(player);
+  //       } else if (player.gender == "여") {
+  //         femalePlayers.add(player);
+  //       }
+  //
+  //       // 혼성 참가 여부 체크 (예: CSV 4번째 컬럼이 "참"인 경우)
+  //       if (row.length > 3 && row[3].toString().trim() == "참") {
+  //         mixedPlayers.add(player);
+  //       }
+  //     } catch (e) {
+  //       print("⚠️ 데이터 변환 오류: $row → $e");
+  //     }
+  //   }
+  //
+  //   // 변환된 데이터를 SharedPreferences에 저장
+  //   savePlayersToSharedPreferences(malePlayers, "남성 참가자");
+  //   savePlayersToSharedPreferences(femalePlayers, "여성 참가자");
+  //   savePlayersToSharedPreferences(mixedPlayers, "혼복 참가자");
+  //
+  //   print("📌 변환된 데이터를 SharedPreferences에 저장 완료.");
+  // }
+
+  // 📌 CSV 데이터를 변환하여 Firestore에 저장
+  void _convertCSVToPlayers() {
+    List<Player> playerList = [];
+    _csvData = _csvData.sublist(1); //컬럼 정보 빼기
+
+    for (var row in _csvData) {
       try {
         Player player = Player(
           name: row[0].toString(),
           gender: row[1].toString(),
-          rank: int.tryParse(row[2].toString()) ?? 0, // 변환 실패 시 기본값 0
+          rank: int.tryParse(row[2].toString()) ?? 0,
+          isMixed: row.length > 3 && row[3].toString().trim() == "참",
         );
 
-        // 성별을 기준으로 분류
-        if (player.gender == "남") {
-          malePlayers.add(player);
-        } else if (player.gender == "여") {
-          femalePlayers.add(player);
-        }
-
-        // 혼성 참가 여부 체크 (예: CSV 4번째 컬럼이 "참"인 경우)
-        if (row.length > 3 && row[3].toString().trim() == "참") {
-          mixedPlayers.add(player);
-        }
+        playerList.add(player);
       } catch (e) {
         print("⚠️ 데이터 변환 오류: $row → $e");
       }
     }
 
-    // 변환된 데이터를 SharedPreferences에 저장
-    savePlayersToSharedPreferences(malePlayers, "남성 참가자");
-    savePlayersToSharedPreferences(femalePlayers, "여성 참가자");
-    savePlayersToSharedPreferences(mixedPlayers, "혼복 참가자");
-
-    print("📌 변환된 데이터를 SharedPreferences에 저장 완료.");
+    _savePlayersToFirestore(playerList);
   }
 
 
@@ -271,6 +348,7 @@ class _CSVPageState extends State<CSVPage> {
                     name: nameController.text,
                     gender: genderController.text,
                     rank: int.parse(rankController.text),
+                    isMixed: selectedPlayer.isMixed
                   );
 
                   // 변경된 데이터를 리스트에 적용
@@ -301,10 +379,68 @@ class _CSVPageState extends State<CSVPage> {
     );
   }
 
+  // 📌 참가자 정보 수정 다이얼로그
+  // void _editParticipant(Player player) {
+  //   TextEditingController nameController = TextEditingController(text: player.name);
+  //   TextEditingController genderController = TextEditingController(text: player.gender);
+  //   TextEditingController rankController = TextEditingController(text: player.rank.toString());
+  //
+  //   showDialog(
+  //     context: context,
+  //     builder: (BuildContext context) {
+  //       return AlertDialog(
+  //         title: Text("참가자 정보 수정"),
+  //         content: Column(
+  //           mainAxisSize: MainAxisSize.min,
+  //           children: [
+  //             _buildTextField("이름", nameController),
+  //             _buildTextField("성별 (남/여)", genderController),
+  //             _buildTextField("순위", rankController),
+  //           ],
+  //         ),
+  //         actions: [
+  //           TextButton(
+  //             onPressed: () => Navigator.pop(context),
+  //             child: Text("취소"),
+  //           ),
+  //           TextButton(
+  //             onPressed: () {
+  //               setState(() {
+  //                 player.name = nameController.text;
+  //                 player.gender = genderController.text;
+  //                 player.rank = int.tryParse(rankController.text) ?? player.rank;
+  //               });
+  //
+  //               _firestore.collection("참가자").doc(player.name).set(player.toJson());
+  //               print("📌 참가자 정보 Firestore에 저장됨");
+  //               Navigator.pop(context);
+  //             },
+  //             child: Text("저장"),
+  //           ),
+  //         ],
+  //       );
+  //     },
+  //   );
+  // }
+
   // 다이얼로그의 텍스트입력필드
   Widget _buildTextField(String label, TextEditingController controller) {
     return TextField(
         controller: controller, decoration: InputDecoration(labelText: label));
+  }
+
+  // 📌 참가자 삭제
+  void _deleteParticipants() async {
+    QuerySnapshot snapshot = await _firestore.collection("참가자").get();
+    WriteBatch batch = _firestore.batch();
+
+    for (var doc in snapshot.docs) {
+      batch.delete(doc.reference);
+    }
+
+    await batch.commit();
+    print("📌 Firestore 참가자 데이터 삭제 완료");
+    _loadPlayersFromFirestore();
   }
 
   //테이블 만들기
@@ -355,6 +491,34 @@ class _CSVPageState extends State<CSVPage> {
       ),
     );
   }
+  // 📌 테이블 UI
+  // Widget _buildDataTable(List<Player> players, String title, Color color) {
+  //   return Expanded(
+  //     child: Container(
+  //       padding: EdgeInsets.all(8),
+  //       child: Column(
+  //         children: [
+  //           Text(title, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+  //           players.isEmpty
+  //               ? Center(child: Text("데이터 없음"))
+  //               : Expanded(
+  //             child: SingleChildScrollView(
+  //               child: DataTable(
+  //                 decoration: BoxDecoration(
+  //                   color: color,
+  //                   borderRadius: BorderRadius.circular(10),
+  //                   border: Border.all(color: Colors.black),
+  //                 ),
+  //                 columns: _buildTableColumns(),
+  //                 rows: _buildTableRows(players),
+  //               ),
+  //             ),
+  //           ),
+  //         ],
+  //       ),
+  //     ),
+  //   );
+  // }
 
 
   // 컬럼 리스트 반환
@@ -365,6 +529,14 @@ class _CSVPageState extends State<CSVPage> {
       DataColumn(label: Text("순위"), onSort: (_, __) => sortFunction("순위")),
     ];
   }
+  // 📌 컬럼 정의
+  // List<DataColumn> _buildTableColumns() {
+  //   return [
+  //     DataColumn(label: Text("이름")),
+  //     DataColumn(label: Text("성별")),
+  //     DataColumn(label: Text("순위")),
+  //   ];
+  // }
 
   // 테이블 행 데이터 반환
   List<DataRow> _buildTableRows(List<Player> data, TableType tableType) {
@@ -383,6 +555,18 @@ class _CSVPageState extends State<CSVPage> {
       );
     }).toList();
   }
+  // 📌 행 데이터
+  // List<DataRow> _buildTableRows(List<Player> players) {
+  //   return players.map((player) {
+  //     return DataRow(
+  //       cells: [
+  //         DataCell(Text(player.name), onTap: () => _editParticipant(player)),
+  //         DataCell(Text(player.gender)),
+  //         DataCell(Text(player.rank.toString())),
+  //       ],
+  //     );
+  //   }).toList();
+  // }
 
   //Player 데이터 sharedPreference에 저장하기
   Future<void> savePlayersToSharedPreferences(List<Player> players, String key) async {
@@ -451,7 +635,7 @@ class _CSVPageState extends State<CSVPage> {
   // 확인 버튼 ( 파일을 업로드 후 1행 제거, 성별과 혼복여부에 따라 데이터 분류
   void convertFileButton(){
     if(selectedFile != null) { //업로드 되어 있으면
-      _convertCSVToPlayers(_csvData.sublist(1));  //sharedPrefenece에 변환해서 저장됨
+      // _convertCSVToPlayers(_csvData.sublist(1));  //sharedPrefenece에 변환해서 저장됨
 
       // SharedPreferences에서 데이터를 다시 불러와 테이블 업데이트
       loadTableData();
@@ -462,6 +646,61 @@ class _CSVPageState extends State<CSVPage> {
     }
   }
 
+  // @override
+  // Widget build(BuildContext context) {
+  //   return Scaffold(
+  //     appBar: AppBar(title: Text("CSV 참가자 명단")),
+  //     body: Column(
+  //       children: [
+  //         Row(
+  //           mainAxisAlignment: MainAxisAlignment.center,
+  //           children: [
+  //             Padding(
+  //               padding: const EdgeInsets.all(8.0),
+  //               child: ElevatedButton(
+  //                   onPressed: _pickCSVFile, child: Text("CSV 파일 업로드")),
+  //             ),
+  //             Padding(
+  //               padding: const EdgeInsets.all(8.0),
+  //               child: Text(selectedFile ?? " "),
+  //             ),
+  //             Padding(
+  //               padding: const EdgeInsets.all(8.0),
+  //               child: ElevatedButton(
+  //                   onPressed: convertFileButton,
+  //                   child: Text("확인")),
+  //             ),
+  //             Padding(
+  //               padding: const EdgeInsets.fromLTRB(20, 8, 8, 8),
+  //               child: ElevatedButton(
+  //                   onPressed: deleteData,
+  //                   child: Text("삭제하기")),
+  //             ),
+  //           ],
+  //         ),
+  //         Row(
+  //           mainAxisAlignment: MainAxisAlignment.spaceEvenly, // 🔹 테이블 간 균등 배치
+  //           children: [
+  //             _buildDataTable(_malePlayers, "남성 참가자",
+  //                 _getColumnIndex(_maleSortColumn), _maleIsSortedAscending, _sortMaleTable,
+  //                 TableType.male, Colors.blue.shade100),
+  //
+  //             _buildDataTable(_mixedPlayers, "혼복 참가자",
+  //                 _getColumnIndex(_mixedSortColumn), _mixedIsSortedAscending, _sortMixedTable,
+  //                 TableType.mixed, Colors.green.shade100),
+  //
+  //             _buildDataTable(_femalePlayers, "여성 참가자",
+  //                 _getColumnIndex(_femaleSortColumn), _femaleIsSortedAscending, _sortFemaleTable,
+  //                 TableType.female, Colors.pink.shade100),
+  //           ],
+  //         ),
+  //
+  //
+  //       ],
+  //     ),
+  //   );
+  // }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -471,31 +710,18 @@ class _CSVPageState extends State<CSVPage> {
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: ElevatedButton(
-                    onPressed: _pickCSVFile, child: Text("CSV 파일 업로드")),
-              ),
+              ElevatedButton(onPressed: _pickCSVFile, child: Text("CSV 파일 업로드")),
               Padding(
                 padding: const EdgeInsets.all(8.0),
                 child: Text(selectedFile ?? " "),
               ),
-              Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: ElevatedButton(
-                    onPressed: convertFileButton,
-                    child: Text("확인")),
-              ),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(20, 8, 8, 8),
-                child: ElevatedButton(
-                    onPressed: deleteData,
-                    child: Text("삭제하기")),
-              ),
+              ElevatedButton(onPressed: _convertCSVToPlayers, child: Text("변환 후 저장")),
+              ElevatedButton(onPressed: _deleteParticipants, child: Text("데이터 삭제")),
+              ElevatedButton(onPressed: _loadPlayersFromFirestore, child: Text("테스트")),
             ],
           ),
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly, // 🔹 테이블 간 균등 배치
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
               _buildDataTable(_malePlayers, "남성 참가자",
                   _getColumnIndex(_maleSortColumn), _maleIsSortedAscending, _sortMaleTable,
@@ -510,10 +736,24 @@ class _CSVPageState extends State<CSVPage> {
                   TableType.female, Colors.pink.shade100),
             ],
           ),
-
-
         ],
       ),
     );
   }
+
+
+  void showSnackBar(BuildContext context, String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message, style: TextStyle(color: Colors.black87),),
+        duration: Duration(seconds: 1),
+        backgroundColor: Colors.teal.shade100,
+      ),
+    );
+  }
+
+  void showToast(){
+    showSnackBar(context, "테스트");
+  }
+
 }

@@ -11,7 +11,6 @@ class TeamManagementPage extends StatefulWidget {
 }
 
 class _TeamManagementPageState extends State<TeamManagementPage> {
-
   final FirestoreService _firestoreService = FirestoreService();
 
   List<Team> maleTeams = [];
@@ -50,13 +49,19 @@ class _TeamManagementPageState extends State<TeamManagementPage> {
   }
 
   // 📌 SharedPreferences에서 팀 데이터 불러오기
+  // Future<void> _loadTeams() async {
+  //   SharedPreferences prefs = await SharedPreferences.getInstance();
+  //   setState(() {
+  //     maleTeams = _loadTeamList(prefs, "남성 복식 팀");
+  //     femaleTeams = _loadTeamList(prefs, "여성 복식 팀");
+  //     mixedTeams = _loadTeamList(prefs, "혼성 복식 팀");
+  //   });
+  // }
   Future<void> _loadTeams() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    setState(() {
-      maleTeams = _loadTeamList(prefs, "남성 복식 팀");
-      femaleTeams = _loadTeamList(prefs, "여성 복식 팀");
-      mixedTeams = _loadTeamList(prefs, "혼성 복식 팀");
-    });
+    maleTeams = await _firestoreService.loadTeams("남성 복식 팀");
+    femaleTeams = await _firestoreService.loadTeams("여성 복식 팀");
+    mixedTeams = await _firestoreService.loadTeams("혼성 복식 팀");
+    setState(() {});
   }
 
   // 📌 SharedPreferences에서 리스트 변환
@@ -68,12 +73,17 @@ class _TeamManagementPageState extends State<TeamManagementPage> {
   }
 
   // 📌 팀 데이터 저장
+  // Future<void> _saveTeams() async {
+  //   SharedPreferences prefs = await SharedPreferences.getInstance();
+  //   await prefs.setString("남성 복식 팀", jsonEncode(maleTeams.map((t) => t.toJson()).toList()));
+  //   await prefs.setString("여성 복식 팀", jsonEncode(femaleTeams.map((t) => t.toJson()).toList()));
+  //   await prefs.setString("혼성 복식 팀", jsonEncode(mixedTeams.map((t) => t.toJson()).toList()));
+  //   await prefs.setString("divisionCounts", jsonEncode(divisionCounts));
+  // }
   Future<void> _saveTeams() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    await prefs.setString("남성 복식 팀", jsonEncode(maleTeams.map((t) => t.toJson()).toList()));
-    await prefs.setString("여성 복식 팀", jsonEncode(femaleTeams.map((t) => t.toJson()).toList()));
-    await prefs.setString("혼성 복식 팀", jsonEncode(mixedTeams.map((t) => t.toJson()).toList()));
-    await prefs.setString("divisionCounts", jsonEncode(divisionCounts));
+    await _firestoreService.saveTeams(maleTeams, "남성 복식 팀");
+    await _firestoreService.saveTeams(femaleTeams, "여성 복식 팀");
+    await _firestoreService.saveTeams(mixedTeams, "혼성 복식 팀");
   }
 
   Future<void> _saveState() async {
@@ -137,8 +147,8 @@ class _TeamManagementPageState extends State<TeamManagementPage> {
 
   // 📌 실력 균형 기반 팀 자동 구성
   Future<void> _generateTeams() async {
-    List<Player> males = await _loadPlayers("남성 참가자");
-    List<Player> females = await _loadPlayers("여성 참가자");
+    List<Player> males = await _firestoreService.loadPlayers("남성 참가자");
+    List<Player> females = await _firestoreService.loadPlayers("여성 참가자");
 
     // ✅ 사용자 입력을 받아 몇 부로 나눌지 결정
     await _showDivisionDialog("남성 복식", males.length, (int maleDivisions) async {
