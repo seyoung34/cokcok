@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
+import '../services/firestore_service.dart';
 import 'model/Player.dart';
 import 'model/Team.dart';
 
@@ -11,6 +11,9 @@ class TeamManagementPage extends StatefulWidget {
 }
 
 class _TeamManagementPageState extends State<TeamManagementPage> {
+
+  final FirestoreService _firestoreService = FirestoreService();
+
   List<Team> maleTeams = [];
   List<Team> femaleTeams = [];
   List<Team> mixedTeams = [];
@@ -70,6 +73,7 @@ class _TeamManagementPageState extends State<TeamManagementPage> {
     await prefs.setString("남성 복식 팀", jsonEncode(maleTeams.map((t) => t.toJson()).toList()));
     await prefs.setString("여성 복식 팀", jsonEncode(femaleTeams.map((t) => t.toJson()).toList()));
     await prefs.setString("혼성 복식 팀", jsonEncode(mixedTeams.map((t) => t.toJson()).toList()));
+    await prefs.setString("divisionCounts", jsonEncode(divisionCounts));
   }
 
   Future<void> _saveState() async {

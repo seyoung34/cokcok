@@ -1,6 +1,6 @@
 import 'package:cokcok/CSVPage.dart';
 import 'TeamManagementPage.dart';
-import 'Game.dart';
+import 'MatchTablePage.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
@@ -43,7 +43,7 @@ class _MainScreenState extends State<MainScreen> {
   final List<Widget> _pages = [
     CSVPage(), // 참가인원 관리 페이지
     TeamManagementPage(), // 팀 구성 페이지
-    Game(), // 경기 진행 페이지
+    MatchTablePage(), // 경기 진행 페이지
   ];
 
   // 📌 탭 변경 시 실행되는 함수
