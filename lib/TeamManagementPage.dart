@@ -31,6 +31,7 @@ class _TeamManagementPageState extends State<TeamManagementPage> {
       body: Column(
         children: [
           _buildCategorySelector(), // 🔹 카테고리 선택 버튼 추가
+
           Padding(
             padding: const EdgeInsets.all(8.0),
             child: ElevatedButton(
@@ -38,6 +39,7 @@ class _TeamManagementPageState extends State<TeamManagementPage> {
               child: Text("팀 자동 구성"),
             ),
           ),
+
           Expanded(child: _buildSelectedCategoryView()), // 🔹 선택된 카테고리만 표시
         ],
       ),
@@ -214,10 +216,12 @@ class _TeamManagementPageState extends State<TeamManagementPage> {
               groupValue: selectedCategory,
               onChanged: (value) {
                 setState(() {
-                  selectedCategory = (selectedCategory == value) ? null : value; // 선택 취소 가능
+                  // selectedCategory = (selectedCategory == value) ? null : value; // 선택 취소 가능
+                  selectedCategory = value;
                   _saveState();
                 });
               },
+              toggleable: true,
             ),
             Text(category),
           ],
@@ -227,15 +231,18 @@ class _TeamManagementPageState extends State<TeamManagementPage> {
   }
 
   // 📌 선택된 카테고리에 따라 팀 배치
+  //메인 ui에 들어갈 위젯
   Widget _buildSelectedCategoryView() {
     if (selectedCategory == null) return Container(); // 아무것도 선택되지 않으면 빈 화면
 
     List<Team> selectedTeams;
     if (selectedCategory == "남성") {
       selectedTeams = maleTeams;
-    } else if (selectedCategory == "여성") {
+    }
+    else if (selectedCategory == "여성") {
       selectedTeams = femaleTeams;
-    } else {
+    }
+    else {
       selectedTeams = mixedTeams;
     }
 
@@ -243,7 +250,8 @@ class _TeamManagementPageState extends State<TeamManagementPage> {
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
-      spacing: 20,
+      spacing: 20,  //그리드뷰간 거리
+      //note 잘 모르겠당
       children: List.generate(divisionCount, (index) {
         List<Team> divisionTeams = selectedTeams.where((team) => team.division == index + 1).toList();
         return Expanded(
@@ -317,7 +325,8 @@ class _TeamManagementPageState extends State<TeamManagementPage> {
     return mixedTeams;
   }
 
-// 📌 GridView 형태의 팀 섹션을 생성
+  // 📌 GridView 형태의 팀 섹션을 생성
+  // 부 단위
   Widget _buildTeamSection(String title, List<Team> teams, Color color) {
     return Expanded(
       child: Column(
@@ -330,27 +339,35 @@ class _TeamManagementPageState extends State<TeamManagementPage> {
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
           ),
+
           teams.isEmpty
               ? Padding(
             padding: const EdgeInsets.all(8.0),
             child: Text("팀이 없습니다."),
           )
-              : _buildDraggableGridView(teams, color),
+              : _buildDraggableGridView(teams, color),  //데이터 있을 시 진짜로 그리드뷰 그리는 함수
         ],
       ),
     );
   }
 
-// 📌 Drag & Drop이 가능한 팀 목록 (GridView 형식)
+  // 📌 Drag & Drop이 가능한 팀 목록 (GridView 형식)
+  // note 그리드 뷰 그리는 부분
   Widget _buildDraggableGridView(List<Team> teams, Color color) {
     return GridView.builder(
       shrinkWrap: true,
       physics: NeverScrollableScrollPhysics(),
-      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2, // ✅ 2열 배치
-        crossAxisSpacing: 16,
-        mainAxisSpacing: 16,
-        childAspectRatio: 1.5, // ✅ 팀 박스의 가로/세로 비율 조정
+      // gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+      //   crossAxisCount: 2, // ✅ 2열 배치
+      //   crossAxisSpacing: 16,
+      //   mainAxisSpacing: 16,
+      //   childAspectRatio: 1.5, // ✅ 팀 박스의 가로/세로 비율 조정
+      // ),
+      gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+        maxCrossAxisExtent: 250, // 한 열의 최대 크기 지정 (250px 이상이면 다음 행으로)
+        crossAxisSpacing: 16, // 열 간 간격
+        mainAxisSpacing: 16, // 행 간 간격
+        childAspectRatio: 1.5, // 너비와 높이 비율
       ),
       itemCount: teams.length,
       itemBuilder: (context, index) {
@@ -372,33 +389,55 @@ class _TeamManagementPageState extends State<TeamManagementPage> {
               padding: EdgeInsets.all(8),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  Text(
+
+                  Text( //note 팀 이름 부분
                     teams[index].id,
                     style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
                   ),
-                  SizedBox(height: 8),
-                  Wrap(
-                    spacing: 5,
-                    children: teams[index].players.map((player) {
-                      return Draggable<Player>(
-                        data: player,
-                        feedback: Material(
-                          child: Container(
-                            padding: EdgeInsets.all(8),
-                            color: Colors.teal,
-                            child: Text(player.name, style: TextStyle(color: Colors.white)),
-                          ),
-                        ),
-                        onDragStarted: () => setState(() => _removePlayerFromTeams(player)),
-                        onDraggableCanceled: (_, __) => setState(() => teams[index].players.add(player)),
-                        child: Container(
-                          padding: EdgeInsets.all(8),
-                          color: Colors.white,
-                          child: Text(player.name),
-                        ),
-                      );
-                    }).toList(),
+                  SizedBox(height: 10),
+
+                  Expanded(
+                    child: Wrap(
+                      alignment: WrapAlignment.center,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      runSpacing: 10,
+                      spacing: 10,
+                      children: teams[index].players.map((player) {
+                        return LayoutBuilder(
+                          builder: (context, constraints) {
+                            double itemWidth = constraints.maxWidth * 0.4;
+                            double itemHeight = constraints.maxHeight * 0.2;
+                            itemWidth = itemWidth < 40 ? 40 : itemWidth; // ✅ 최소 너비 제한
+                            itemHeight = itemHeight < 40 ? 40 : itemHeight; // ✅ 최소 높이 제한
+                            return Draggable<Player>(
+                              data: player,
+
+                              feedback: Material(
+                                child: Container(
+                                  padding: EdgeInsets.all(8),
+                                  color: Colors.teal,
+                                  child: Text(player.name, style: TextStyle(color: Colors.white)),
+                                ),
+                              ),
+
+                              onDragStarted: () => setState(() => _removePlayerFromTeams(player)),
+                              onDraggableCanceled: (_, __) => setState(() => teams[index].players.add(player)),
+
+                              child: Container(
+                                alignment: Alignment.center,
+                                width: itemWidth,
+                                height: 40,
+                                padding: EdgeInsets.all(8),
+                                color: Colors.white,
+                                child: Center(child: Text(player.name, style: TextStyle(fontSize: itemWidth *0.2),)),
+                              ),
+                            );
+                          },
+                        );
+                      }).toList(),
+                    ),
                   ),
                 ],
               ),
