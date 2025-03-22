@@ -21,8 +21,8 @@ class FirestoreService {
   // 🔹 팀 불러오기
   Future<List<Team>> loadTeams(String category) async {
     QuerySnapshot snapshot = await _db.collection(category).get();
-    print("~~~$category");
-    print(snapshot.docs.map((e) => e.data()));
+    // print("~~~$category");
+    // print(snapshot.docs.map((e) => e.data()));
     return snapshot.docs.map((doc) => Team.fromJson(doc.data() as Map<String, dynamic>)).toList();
   }
 
@@ -39,23 +39,30 @@ class FirestoreService {
   }
 
   // 🔹 참가자 불러오기
-  Future<List<Player>> loadPlayers(String category, String gender) async {
-    QuerySnapshot snapshot = await _db
+  Future<List<Player>> loadPlayers(String category, String gender, {bool sortByRank = false}) async {
+    Query query = _db
         .collection(category)
-        .where("성별", isEqualTo: gender) // 🔹 성별 필터 추가
-        .get();
+        .where("성별", isEqualTo: gender); // 🔹 성별 필터
+
+    if (sortByRank) {
+      query = query.orderBy("순위", descending: false); // 🔹 오름차순 정렬
+    }
+
+    QuerySnapshot snapshot = await query.get();
 
     if (snapshot.docs.isEmpty) {
       print("Firestore에서 데이터를 찾을 수 없음: $category");
       return [];
     }
 
-    // return snapshot.docs.map((doc) => Player.fromJson(doc.data() as Map<String, dynamic>)).toList();
     return snapshot.docs.map((doc) {
-      // print("📌 ${doc.id}: ${doc.data()}"); // Firestore 데이터 확인 로그
+      print("*******************");
+      print(doc.data().toString());
       return Player.fromJson(doc.data() as Map<String, dynamic>);
     }).toList();
+
   }
+
 
 
   // 🔹 경기 저장

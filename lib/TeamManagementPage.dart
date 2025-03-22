@@ -23,16 +23,12 @@ class _TeamManagementPageState extends State<TeamManagementPage> {
   @override
   void initState() {
     super.initState();
-    print("init_1");
-    checkFirestoreData();
     _loadTeams();
-    print("init_2");
     _loadState();
   }
 
   @override
   Widget build(BuildContext context) {
-    print("빌드됨");
     return Scaffold(
       appBar: AppBar(title: Text("팀 구성")),
       body: Column(
@@ -53,22 +49,10 @@ class _TeamManagementPageState extends State<TeamManagementPage> {
     );
   }
 
-  void checkFirestoreData() async {
-    try {
-      var snapshot = await FirebaseFirestore.instance.collection("남성 복식 팀").get();
-      print("📌 Firestore 팀 데이터 개수: ${snapshot.docs.length}");
-      for (var doc in snapshot.docs) {
-        print("📌 ${doc.id}: ${doc.data()}");
-      }
-    } catch (e) {
-      print("❌ Firestore 데이터 로드 실패: $e");
-    }
-  }
 
 
   // firestore에서 팀 데이터 받아오기
   Future<void> _loadTeams() async {
-    print("_loadTeams");
     maleTeams = await _firestoreService.loadTeams("남성 복식 팀");
     femaleTeams = await _firestoreService.loadTeams("여성 복식 팀");
     mixedTeams = await _firestoreService.loadTeams("혼성 복식 팀");
@@ -80,6 +64,7 @@ class _TeamManagementPageState extends State<TeamManagementPage> {
     await _firestoreService.saveTeams(maleTeams, "남성 복식 팀");
     await _firestoreService.saveTeams(femaleTeams, "여성 복식 팀");
     await _firestoreService.saveTeams(mixedTeams, "혼성 복식 팀");
+    print("팀 정보 저장");
   }
 
   /// 📌 SharedPreferences에 현재 상태 저장
@@ -145,19 +130,18 @@ class _TeamManagementPageState extends State<TeamManagementPage> {
 
   // 📌 실력 균형 기반 팀 자동 구성
   Future<void> _generateTeams() async {
-    List<Player> males = await _firestoreService.loadPlayers("참가자","남");
-    List<Player> females = await _firestoreService.loadPlayers("참가자","여");
+    //note 우선 균등 배분하고 선택에 따라 1부에 몇 명, 2부에 몇 명 넣을지 고려
 
-    print(males.map((e) => e));
-    print(females.map((e) => e.name,));
+
+    List<Player> males = await _firestoreService.loadPlayers("참가자","남",sortByRank: true);
+    List<Player> females = await _firestoreService.loadPlayers("참가자","여",sortByRank: true);
+
+    print("_generateTeams ${males.map((e) => {e.name, e.rank})}");
+
 
     // ✅ 사용자 입력을 받아 몇 부로 나눌지 결정
     await _showDivisionDialog("남성 복식", males.length, (int maleDivisions) async {
       await _showDivisionDialog("여성 복식", females.length, (int femaleDivisions) async {
-
-        // ✅ 실력 순으로 정렬
-        // males.sort((a, b) => a.rank.compareTo(b.rank));
-        // females.sort((a, b) => a.rank.compareTo(b.rank));
 
         // ✅ 각 Player 객체의 division 설정
         _assignDivisions(males, maleDivisions);
@@ -167,6 +151,8 @@ class _TeamManagementPageState extends State<TeamManagementPage> {
         List<Team> newMaleTeams = _createTeams(males);
         List<Team> newFemaleTeams = _createTeams(females);
         List<Team> newMixedTeams = _createMixedTeams(males, females);
+
+        print("newMaleTeams : ${newMaleTeams.map.toString()}");
 
         setState(() {
           maleTeams = newMaleTeams;
@@ -187,11 +173,15 @@ class _TeamManagementPageState extends State<TeamManagementPage> {
 
   // 📌 Player 객체에 division을 설정하는 함수
   void _assignDivisions(List<Player> players, int divisionCount) {
-    int playersPerDivision = (players.length / divisionCount).ceil();
+    int playersPerDivision = (players.length / divisionCount).ceil(); //올림처리
+
 
     for (int i = 0; i < players.length; i++) {
-      players[i].division = (i ~/ playersPerDivision) + 1;
+      players[i].division = (i ~/ playersPerDivision) + 1;  // note 정수 나눗셈 연산자
     }
+
+    // todo save Player divison
+    _firestoreService.savePlayers(players, "참가자");
   }
 
 
@@ -278,6 +268,7 @@ class _TeamManagementPageState extends State<TeamManagementPage> {
   }
 
   // 📌 혼성 복식 팀 구성 (division 기준으로 남녀 매칭)
+  // note 랜덤으로 만들자.
   List<Team> _createMixedTeams(List<Player> males, List<Player> females) {
     List<Team> mixedTeams = [];
 
@@ -402,12 +393,13 @@ class _TeamManagementPageState extends State<TeamManagementPage> {
                                     ),
                                     onDragStarted: () => setState(() => _removePlayerFromTeams(player)),
                                     onDraggableCanceled: (_, __) => setState(() => teams[index].players.add(player)),
+
                                     child: Container(
                                       alignment: Alignment.center,
                                       height: 40,
                                       width: itemWidth,
                                       padding: EdgeInsets.all(8),
-                                      color: Colors.white,
+                                      color: player.gender=="남" ? Colors.blue.shade100 : Colors.pink.shade100,
                                       child: Center(
                                         child: Text(
                                           player.name,
