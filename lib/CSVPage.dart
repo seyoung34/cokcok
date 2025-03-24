@@ -408,6 +408,31 @@ class _CSVPageState extends State<CSVPage> {
     _loadPlayersFromFirestore();
   }
 
+  Future<void> deleteAllData() async {
+    await _deleteCollection("참가자");
+    await _deleteCollection("남성 복식 팀");
+    await _deleteCollection("여성 복식 팀");
+    await _deleteCollection("혼성 복식 팀");
+
+    print("📌 모든 컬렉션 데이터 삭제 완료");
+  }
+
+// 특정 컬렉션의 모든 문서 삭제
+  Future<void> _deleteCollection(String collectionName) async {
+    final snapshot = await FirebaseFirestore.instance.collection(collectionName).get();
+    final batch = FirebaseFirestore.instance.batch();
+
+    for (var doc in snapshot.docs) {
+      batch.delete(doc.reference);
+    }
+
+    await batch.commit();
+    print("✅ $collectionName 컬렉션 삭제 완료");
+  }
+
+
+
+
   //테이블 만들기
   Widget _buildDataTable(
       List<Player> data,
@@ -579,7 +604,7 @@ class _CSVPageState extends State<CSVPage> {
                 child: Text(selectedFile ?? " "),
               ),
               ElevatedButton(onPressed: _convertCSVToPlayers, child: Text("변환 후 저장")),
-              ElevatedButton(onPressed: _deleteParticipants, child: Text("데이터 삭제")),
+              ElevatedButton(onPressed: deleteAllData, child: Text("모든 데이터 삭제")),
               ElevatedButton(onPressed: _loadPlayersFromFirestore, child: Text("테스트")),
             ],
           ),

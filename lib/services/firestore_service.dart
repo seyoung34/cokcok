@@ -82,4 +82,29 @@ class FirestoreService {
     QuerySnapshot snapshot = await _db.collection("경기 기록").get();
     return snapshot.docs.map((doc) => Match.fromJson(doc.data() as Map<String, dynamic>)).toList();
   }
+
+  //부 저장
+  Future<void> saveDivision(Map<String, int> divisionCount, String category) async {
+    final batch = _db.batch();
+    DocumentReference docRef = _db.collection(category).doc("부");
+
+    // divisionCount 전체를 저장
+    batch.set(docRef, divisionCount);
+
+    await batch.commit();
+    print("📌 $category 컬렉션의 부 정보 저장 완료: $divisionCount");
+  }
+
+  //부 정보 불러오기
+  Future<Map<String, int>> loadDivision(String category) async {
+    final doc = await _db.collection(category).doc("부").get();
+
+    if (!doc.exists) return {};
+    return Map<String, int>.from(doc.data() as Map<String, dynamic>);
+  }
+
+
+
+
+
 }

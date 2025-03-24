@@ -24,7 +24,8 @@ class _TeamManagementPageState extends State<TeamManagementPage> {
   void initState() {
     super.initState();
     _loadTeams();
-    _loadState();
+    _loadDivision();
+    // _loadState();
   }
 
   @override
@@ -68,30 +69,40 @@ class _TeamManagementPageState extends State<TeamManagementPage> {
   }
 
   /// 📌 SharedPreferences에 현재 상태 저장
-  Future<void> _saveState() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-
-    // ✅ 현재 division 설정 저장
-    await prefs.setInt("남성_division", divisionCounts["남성"] ?? 1);
-    await prefs.setInt("여성_division", divisionCounts["여성"] ?? 1);
-    await prefs.setInt("혼성_division", divisionCounts["혼성"] ?? 1);
-
-    // ✅ 현재 선택된 카테고리 저장
-    await prefs.setString("selectedCategory", selectedCategory ?? "");
-  }
+  // Future<void> _saveState() async {
+  //   SharedPreferences prefs = await SharedPreferences.getInstance();
+  //
+  //   // ✅ 현재 division 설정 저장
+  //   await prefs.setInt("남성_division", divisionCounts["남성"] ?? 1);
+  //   await prefs.setInt("여성_division", divisionCounts["여성"] ?? 1);
+  //   await prefs.setInt("혼성_division", divisionCounts["혼성"] ?? 1);
+  //
+  //   // ✅ 현재 선택된 카테고리 저장
+  //   await prefs.setString("selectedCategory", selectedCategory ?? "");
+  // }
 
   /// 📌 SharedPreferences에서 저장된 상태 불러오기
-  Future<void> _loadState() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
+  // Future<void> _loadState() async {
+  //   SharedPreferences prefs = await SharedPreferences.getInstance();
+  //
+  //   setState(() {
+  //     divisionCounts["남성"] = prefs.getInt("남성_division") ?? 1;
+  //     divisionCounts["여성"] = prefs.getInt("여성_division") ?? 1;
+  //     divisionCounts["혼성"] = prefs.getInt("혼성_division") ?? 1;
+  //     selectedCategory = prefs.getString("selectedCategory")?.isNotEmpty ?? false
+  //         ? prefs.getString("selectedCategory")
+  //         : null;
+  //   });
+  // }
 
-    setState(() {
-      divisionCounts["남성"] = prefs.getInt("남성_division") ?? 1;
-      divisionCounts["여성"] = prefs.getInt("여성_division") ?? 1;
-      divisionCounts["혼성"] = prefs.getInt("혼성_division") ?? 1;
-      selectedCategory = prefs.getString("selectedCategory")?.isNotEmpty ?? false
-          ? prefs.getString("selectedCategory")
-          : null;
-    });
+  //부 정보 불러오기
+  Future<void> _loadDivision() async{
+    divisionCounts = await _firestoreService.loadDivision("부");
+  }
+
+  // 부 정보 저장하기
+  void _saveDivision() async{
+    _firestoreService.saveDivision(divisionCounts, "부");
   }
 
 
@@ -147,6 +158,14 @@ class _TeamManagementPageState extends State<TeamManagementPage> {
         _assignDivisions(males, maleDivisions);
         _assignDivisions(females, femaleDivisions);
 
+        //부 정보 저장
+        divisionCounts["남성"] = maleDivisions;
+        divisionCounts["여성"] = femaleDivisions;
+        divisionCounts["혼성"] = 1;
+        _saveDivision();
+
+
+
         // ✅ 팀 생성
         List<Team> newMaleTeams = _createTeams(males);
         List<Team> newFemaleTeams = _createTeams(females);
@@ -166,7 +185,7 @@ class _TeamManagementPageState extends State<TeamManagementPage> {
         });
 
         await _saveTeams(); // ✅ 자동 저장
-        await _saveState();
+        // await _saveState();
       });
     });
   }
@@ -198,7 +217,7 @@ class _TeamManagementPageState extends State<TeamManagementPage> {
               onChanged: (value) {
                 setState(() {
                   selectedCategory = value;
-                  _saveState();
+                  // _saveState();
                 });
               },
               toggleable: true,
@@ -235,7 +254,7 @@ class _TeamManagementPageState extends State<TeamManagementPage> {
                 padding: EdgeInsets.all(8),
                 color: Colors.grey.shade200,
                 child: _buildTeamSection("${selectedCategory!} ${index + 1}부",divisionTeams,
-                    selectedTeams == mixedTeams ? Colors.green.shade100 : selectedTeams == maleTeams ? Colors.blue.shade100 : Colors.pink.shade100)
+                    selectedTeams == mixedTeams ? Colors.green.shade100 : selectedTeams == maleTeams ? Colors.blue.shade200 : Colors.pink.shade200)
             )
           )
         );
