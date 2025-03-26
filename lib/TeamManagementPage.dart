@@ -276,7 +276,7 @@ class _TeamManagementPageState extends State<TeamManagementPage> {
     groupedPlayers.forEach((division, playerList) {
       for (int i = 0; i < playerList.length ~/ 2; i++) {
         teams.add(Team(
-          id: "부$division-${i + 1}",
+          id: "${i + 1}_${playerList[i].name}-${playerList[playerList.length-i-1].name} ",
           players: [playerList[i], playerList[playerList.length - i - 1]],
           division: division,
         ));
@@ -383,7 +383,7 @@ class _TeamManagementPageState extends State<TeamManagementPage> {
                     mainAxisAlignment: MainAxisAlignment.center, // ✅ 전체적으로 중앙 정렬
                     children: [
                       Text(
-                        teams[index].id,
+                        teams[index].id.split("_")[0]+"팀",
                         style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
                       ),
                       SizedBox(height: 10),

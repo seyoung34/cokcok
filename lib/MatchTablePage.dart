@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import '../services/firestore_service.dart';
 import '../model/Match.dart';
@@ -29,22 +30,22 @@ class _MatchTablePageState extends State<MatchTablePage> {
 
   Future<void> _initializeMatchData() async {
     try {
-      print("init");
       // 부 정보 로드
       divisionInfo = await _firestoreService.loadDivision("부");
 
+      //note 최초 실행 시 진행할건지 다이얼로그 띄워야함
+
       // 팀 정보 로드 및 경기 생성
-      await _generateAllMatchesAndSave();
+      await _generateAllMatchesAndSave(); //save까지함
+
 
       // 경기 정보 로드
-      matchTable = await _firestoreService.loadMatches();
-      print("-----");
-      print("matchTable_2 : $matchTable");
+      // matchTable = await _firestoreService.loadMatches(); //이미 matchTable에 정보 있으니깐 최초 실행 때 불러오기 안해도 될 듯?
 
       setState(() {
         isLoading = false;
         // 첫 번째 카테고리 자동 선택
-        selectedTableKey = matchTable.keys.isNotEmpty ? matchTable.keys.first : null;
+        selectedTableKey = matchTable.keys.isNotEmpty ? matchTable.keys.first : null; //??왜 라디오 선택 값을 matchTable의 키값으로...
       });
     } catch (e) {
       print('데이터 초기화 중 오류 발생: $e');
@@ -70,10 +71,9 @@ class _MatchTablePageState extends State<MatchTablePage> {
     addMatches("여성", femaleTeams, divisionInfo["여성"] ?? 1);
     addMatches("혼성", mixedTeams, divisionInfo["혼성"] ?? 1);
 
-    print("matchTable_1 : $matchTable");
-
     // 대회 ID와 함께 저장
     await _firestoreService.saveMatches(matchTable, widget.tournamentId);
+
   }
 
   List<Match> _createMatches(List<Team> teams, String category, int division) {
@@ -81,7 +81,7 @@ class _MatchTablePageState extends State<MatchTablePage> {
     for (int i = 0; i < teams.length; i++) {
       for (int j = i + 1; j < teams.length; j++) {
         matches.add(Match(
-          id: "$category-${division}-${teams[i].id}-vs-${teams[j].id}",
+          id: "${teams[i].id} VS ${teams[j].id}",
           team1: teams[i],
           team2: teams[j],
           division: division,
@@ -91,7 +91,7 @@ class _MatchTablePageState extends State<MatchTablePage> {
     return matches;
   }
 
-  void _updateMatchScore(Match match, int team1Score, int team2Score) async {
+  void _updateMatchScore(Match match, int team1Score, int team2Score, String gender) async {
     try {
       setState(() {
         match.team1Score = team1Score;
@@ -102,7 +102,8 @@ class _MatchTablePageState extends State<MatchTablePage> {
       // 대회 ID와 함께 경기 업데이트
       await _firestoreService.updateMatch(
           tournamentId: widget.tournamentId,
-          match: match
+          match: match,
+          gender : gender
       );
     } catch (e) {
       print('점수 업데이트 중 오류 발생: $e');
@@ -113,7 +114,7 @@ class _MatchTablePageState extends State<MatchTablePage> {
   }
 
   //점수 다이얼로그
-  void _showScoreDialog(Match match) {
+  void _showScoreDialog(Match match, String gender) {
     final team1Controller = TextEditingController();
     final team2Controller = TextEditingController();
 
@@ -151,7 +152,7 @@ class _MatchTablePageState extends State<MatchTablePage> {
               final team2Score = int.tryParse(team2Controller.text);
 
               if (team1Score != null && team2Score != null) {
-                _updateMatchScore(match, team1Score, team2Score);
+                _updateMatchScore(match, team1Score, team2Score, gender);
                 Navigator.pop(context);
               } else {
                 ScaffoldMessenger.of(context).showSnackBar(
@@ -168,6 +169,7 @@ class _MatchTablePageState extends State<MatchTablePage> {
 
   Widget _buildMatchTable(List<Match> matches) {
     final teams = _getUniqueTeams(matches);
+    String gender = matches[0].toString().split(" ")[0];  //남성,여성,혼성
 
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
@@ -207,7 +209,7 @@ class _MatchTablePageState extends State<MatchTablePage> {
 
                 return DataCell(
                   InkWell(
-                    onTap: () => _showScoreDialog(match),
+                    onTap: () => _showScoreDialog(match, gender),
                     child: Icon(Icons.edit, size: 16),
                   ),
                 );

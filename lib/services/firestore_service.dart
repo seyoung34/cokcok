@@ -105,38 +105,74 @@ class FirestoreService {
   //   print("📌 경기 기록 저장 완료 (컬렉션 분리 구조)");
   // }
 
-  Future<void> saveMatches(Map<String, List<Match>> matchTable, String tournamentId) async {
-    for (var entry in matchTable.entries) {
-      String category = entry.key.split('_')[0]; //남성
-      String division = entry.key.split('_')[1]; //1
+  // Future<void> saveMatches(Map<String, List<Match>> matchTable, String tournamentId) async {
+  //   for (var entry in matchTable.entries) {
+  //     String category = entry.key.split('_')[0]; //남성
+  //     String division = entry.key.split('_')[1]; //1
+  //
+  //     print("$category-$division 1차 : ${DateTime.now()}");
+  //     // 카테고리 문서 생성 시 기본 필드 추가
+  //     await _db
+  //         .collection('경기 기록')
+  //         .doc(tournamentId)
+  //         .collection(category)
+  //         .doc(division)
+  //         .set({
+  //       'name': category + ' ' + division + ' 부',
+  //       'createdAt': FieldValue.serverTimestamp(),
+  //       'tournamentId': tournamentId
+  //     });
+  //
+  //     print("$category-$division 2차 : ${DateTime.now()}");
+  //
+  //     for (var match in entry.value) {
+  //       await _db
+  //           .collection('경기 기록')
+  //           .doc(tournamentId)
+  //           .collection(category)
+  //           .doc(division)
+  //           .collection('경기')
+  //           .doc(match.id)
+  //           .set(match.toJson());
+  //     }
+  //   }
+  //   print("saveMatches 완료");
+  // }
 
-      // 카테고리 문서 생성 시 기본 필드 추가
-      await _db
+
+  //최초 모든 데이터 받아오기
+  Future<void> saveMatches(Map<String, List<Match>> matchTable, String tournamentId) async {
+    print("saveMatches 시작 : ${DateTime.now()}");
+    final batch = _db.batch();
+    for (var entry in matchTable.entries) {
+      String category = entry.key.split('_')[0];  //남성,여성,혼성
+      String division = entry.key.split('_')[1];  //1,2,3.....
+
+      // division 문서에 메타 정보 작성
+      final divisionDoc = _db
           .collection('경기 기록')
-          .doc(tournamentId)
-          .collection(category)
-          .doc(division)
-          .set({
-        'name': category + ' ' + division + ' 부',
+          .doc(tournamentId)  //콕콕 리그전
+          .collection(category) //남성, 여성, 혼성
+          .doc(division); //1,2.3...
+
+      batch.set(divisionDoc, {
+        'name': "$category $division 부",
         'createdAt': FieldValue.serverTimestamp(),
-        'tournamentId': tournamentId
+        'tournamentId': tournamentId,
       });
 
       for (var match in entry.value) {
-        await _db
-            .collection('경기 기록')
-            .doc(tournamentId)
-            .collection(category)
-            .doc(division)
-            .collection('경기')
-            .doc(match.id)
-            .set(match.toJson());
+        final matchDoc = divisionDoc.collection('경기').doc(match.id);
+        batch.set(matchDoc, match.toJson());
       }
+      print("---$category 끝 : ${DateTime.now()}");
     }
-    print("saveMatches 완료");
+    print("반복문 종료 : ${DateTime.now()}");
+
+    // ✅ 한 번에 커밋
+    await batch.commit();
+    print("saveMatches 종료 : ${DateTime.now()}");
   }
-
-
 
   Future<Map<String, List<Match>>> loadMatches() async {
     Map<String, List<Match>> matchTable = {};
@@ -150,10 +186,6 @@ class FirestoreService {
           .collection(category)
           .get();
 
-      print("경기 기록 : ${await _db.collection('경기 기록').doc().get()}");
-      print("콕콕 리그전_category_남성 : ${await _db.collection('경기 기록').doc('콕콕 리그전').collection(category).doc('남성').get()}");
-      print("콕콕 리그전_category_남성 : ${await _db.collection('경기 기록').doc('콕콕 리그전').collection(category).doc('남성').collection('1').get()}");
-      print("categorySnapshot : ${categorySnapshot.docs}");
 
       for (var divisionDoc in categorySnapshot.docs) {
         if(divisionDoc == null) print("divisoinDoc is null!!");
@@ -161,7 +193,6 @@ class FirestoreService {
             .collection('경기')
             .get();
 
-        print("matchesSnapshot : ${matchesSnapshot.docs}");
 
         String key = '${category}_${divisionDoc.id}';
         matchTable[key] = matchesSnapshot.docs
@@ -172,8 +203,6 @@ class FirestoreService {
 
     return matchTable;
   }
-
-
 
 
   //부 저장
@@ -197,11 +226,11 @@ class FirestoreService {
   }
 
 
-  Future<void> updateMatch({ required String tournamentId, required Match match}) async {
+  Future<void> updateMatch({ required String tournamentId, required Match match, required String gender}) async {
     await _db
         .collection('경기 기록')
         .doc(tournamentId)
-        .collection(match.team1.division == 1 ? '남성' : '여성')
+        .collection(gender) //남성,여성,혼성
         .doc(match.division.toString())
         .collection('경기')
         .doc(match.id)
