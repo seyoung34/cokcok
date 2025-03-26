@@ -37,7 +37,7 @@ class MainScreen extends StatefulWidget {
 }
 
 class _MainScreenState extends State<MainScreen> {
-  int _selectedIndex = 1; // 현재 선택된 탭 인덱스
+  int _selectedIndex = 2; // 현재 선택된 탭 인덱스
 
   // 📌 각 탭에 연결될 페이지 리스트
   final List<Widget> _pages = [

@@ -28,6 +28,8 @@ class _MatchTablePageState extends State<MatchTablePage> {
     _initializeMatchData();
   }
 
+  //todo 기존 정보를 불러오는 것을 기본으로 두되, 새 게임 만들기 버튼 만들가
+
   Future<void> _initializeMatchData() async {
     try {
       // 부 정보 로드
@@ -36,11 +38,12 @@ class _MatchTablePageState extends State<MatchTablePage> {
       //note 최초 실행 시 진행할건지 다이얼로그 띄워야함
 
       // 팀 정보 로드 및 경기 생성
-      await _generateAllMatchesAndSave(); //save까지함
+      // await _generateAllMatchesAndSave(); //save까지함
 
 
       // 경기 정보 로드
-      // matchTable = await _firestoreService.loadMatches(); //이미 matchTable에 정보 있으니깐 최초 실행 때 불러오기 안해도 될 듯?
+      matchTable = await _firestoreService.loadMatches(); //이미 matchTable에 정보 있으니깐 최초 실행 때 불러오기 안해도 될 듯?
+        //근데 또 사용자 입장에서 보면 동기화해야하니깐 불러오는게 낫겠다..
 
       setState(() {
         isLoading = false;
@@ -108,7 +111,7 @@ class _MatchTablePageState extends State<MatchTablePage> {
     } catch (e) {
       print('점수 업데이트 중 오류 발생: $e');
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('점수 저장에 실패했습니다.')),
+        SnackBar(content: Text('점수 저장에 실패했습니다. ${gender.toString()}')),
       );
     }
   }
@@ -160,7 +163,7 @@ class _MatchTablePageState extends State<MatchTablePage> {
                 );
               }
             },
-            child: Text("저장"),
+            child: Text(match.isCompleted ? "수정" : "저장"),
           ),
         ],
       ),
@@ -169,20 +172,23 @@ class _MatchTablePageState extends State<MatchTablePage> {
 
   Widget _buildMatchTable(List<Match> matches) {
     final teams = _getUniqueTeams(matches);
-    String gender = matches[0].toString().split(" ")[0];  //남성,여성,혼성
+    String gender = matches[0].team1.players[0].gender;  //남성,여성,혼성
+    print("_buildMatchTable gender : ${gender.toString()}");
 
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       child: DataTable(
         columns: [
           DataColumn(label: Text("팀명")),
-          ...teams.map((t) => DataColumn(label: Text(t.id))).toList()
+          ...teams.map((t) => DataColumn(label: Text(t.id))).toList(),
+          DataColumn(label: Text("순위") )
         ],
         rows: teams.map((rowTeam) {
           return DataRow(
             cells: [
               DataCell(Text(rowTeam.id)),
               ...teams.map((colTeam) {
+
                 if (rowTeam.id == colTeam.id) {
                   return DataCell(Container());
                 }
@@ -200,10 +206,16 @@ class _MatchTablePageState extends State<MatchTablePage> {
                 );
 
                 if (match.isCompleted) {
+                  Text scoreString;
+                  rowTeam.id == match.team2.id
+                    ? scoreString = Text("${match.team2Score} - ${match.team1Score}")
+                    : scoreString = Text("${match.team1Score} - ${match.team2Score}");
+
                   return DataCell(
                     Center(
-                      child: Text("${match.team1Score} - ${match.team2Score}"),
+                      child: scoreString
                     ),
+                    onTap: () => _showScoreDialog(match, gender)
                   );
                 }
 
@@ -214,6 +226,7 @@ class _MatchTablePageState extends State<MatchTablePage> {
                   ),
                 );
               }).toList(),
+              DataCell(Container(),)
             ],
           );
         }).toList(),
@@ -229,6 +242,9 @@ class _MatchTablePageState extends State<MatchTablePage> {
     }
     return teams.values.toList();
   }
+
+
+
 
   @override
   Widget build(BuildContext context) {

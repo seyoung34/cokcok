@@ -53,9 +53,9 @@ class _CSVPageState extends State<CSVPage> {
 
     for (var doc in snapshot.docs) {
       Player player = Player.fromJson(doc.data() as Map<String, dynamic>);
-      if (player.gender == "남") {
+      if (player.gender == "남성") {
         maleList.add(player);
-      } else if (player.gender == "여") {
+      } else if (player.gender == "여성") {
         femaleList.add(player);
       }
       if (player.isMixed) {

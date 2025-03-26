@@ -144,8 +144,8 @@ class _TeamManagementPageState extends State<TeamManagementPage> {
     //note 우선 균등 배분하고 선택에 따라 1부에 몇 명, 2부에 몇 명 넣을지 고려
 
 
-    List<Player> males = await _firestoreService.loadPlayers("참가자","남",sortByRank: true);
-    List<Player> females = await _firestoreService.loadPlayers("참가자","여",sortByRank: true);
+    List<Player> males = await _firestoreService.loadPlayers("참가자","남성",sortByRank: true);
+    List<Player> females = await _firestoreService.loadPlayers("참가자","여성",sortByRank: true);
 
     print("_generateTeams ${males.map((e) => {e.name, e.rank})}");
 
@@ -418,7 +418,7 @@ class _TeamManagementPageState extends State<TeamManagementPage> {
                                       height: 40,
                                       width: itemWidth,
                                       padding: EdgeInsets.all(8),
-                                      color: player.gender=="남" ? Colors.blue.shade100 : Colors.pink.shade100,
+                                      color: player.gender=="남성" ? Colors.blue.shade100 : Colors.pink.shade100,
                                       child: Center(
                                         child: Text(
                                           player.name,
