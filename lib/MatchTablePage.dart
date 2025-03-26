@@ -38,7 +38,7 @@ class _MatchTablePageState extends State<MatchTablePage> {
       //note 최초 실행 시 진행할건지 다이얼로그 띄워야함
 
       // 팀 정보 로드 및 경기 생성
-      // await _generateAllMatchesAndSave(); //save까지함
+      await _generateAllMatchesAndSave(); //save까지함
 
 
       // 경기 정보 로드
@@ -175,13 +175,59 @@ class _MatchTablePageState extends State<MatchTablePage> {
     String gender = matches[0].team1.players[0].gender;  //남성,여성,혼성
     print("_buildMatchTable gender : ${gender.toString()}");
 
+    // final rankings = _calculateRankings(matches); // ✅ 순위 정보 계산
+
+    // 🧮 1. 팀별 통계 계산
+    final teamStats = <String, Map<String, dynamic>>{};
+    for (var team in teams) {
+      teamStats[team.id] = {
+        'wins': 0,
+        'diff': 0,
+        'team': team,
+      };
+    }
+
+    for (var match in matches) {
+      if (!match.isCompleted) continue;
+
+      final team1 = match.team1.id;
+      final team2 = match.team2.id;
+      final t1Score = match.team1Score;
+      final t2Score = match.team2Score;
+
+      if (t1Score > t2Score) {
+        teamStats[team1]!['wins'] += 1;
+      } else {
+        teamStats[team2]!['wins'] += 1;
+      }
+
+      teamStats[team1]!['diff'] += t1Score - t2Score;
+      teamStats[team2]!['diff'] += t2Score - t1Score;
+    }
+
+    // 🏆 2. 순위 정렬
+    final sortedTeams = [...teamStats.values];
+    sortedTeams.sort((a, b) {
+      int winCompare = (b['wins'] as int).compareTo(a['wins'] as int);
+      if (winCompare != 0) return winCompare;
+      return (b['diff'] as int).compareTo(a['diff'] as int);
+    });
+
+    // 순위 기록
+    for (int i = 0; i < sortedTeams.length; i++) {
+      String id = (sortedTeams[i]['team'] as Team).id;
+      teamStats[id]!['rank'] = i + 1;
+    }
+
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       child: DataTable(
         columns: [
           DataColumn(label: Text("팀명")),
           ...teams.map((t) => DataColumn(label: Text(t.id))).toList(),
-          DataColumn(label: Text("순위") )
+          DataColumn(label: Text("순위") ),
+          DataColumn(label: Text("승점") ),
+          DataColumn(label: Text("득실") )
         ],
         rows: teams.map((rowTeam) {
           return DataRow(
@@ -226,7 +272,12 @@ class _MatchTablePageState extends State<MatchTablePage> {
                   ),
                 );
               }).toList(),
-              DataCell(Container(),)
+              DataCell(
+                Text("${teamStats[rowTeam.id]!["rank"].toString()}",
+                style: TextStyle(fontWeight: FontWeight.bold),
+                )), // ✅ 순위 표시
+              DataCell(Text("${teamStats[rowTeam.id]!['wins']}")),
+              DataCell(Text("${teamStats[rowTeam.id]!['diff']}")),
             ],
           );
         }).toList(),
@@ -243,6 +294,65 @@ class _MatchTablePageState extends State<MatchTablePage> {
     return teams.values.toList();
   }
 
+  /// 팀별 승수, 득실차 계산 후 정렬하여 순위를 반환
+  Map<String, int> _calculateRankings(List<Match> matches) {
+    final Map<String, int> wins = {};      // 팀별 승수
+    final Map<String, int> scoreDiff = {}; // 팀별 득실차
+
+    for (var match in matches) {
+      if (!match.isCompleted) continue;
+
+      final team1Id = match.team1.id;
+      final team2Id = match.team2.id;
+
+      // 기본값 초기화
+      wins.putIfAbsent(team1Id, () => 0);
+      wins.putIfAbsent(team2Id, () => 0);
+      scoreDiff.putIfAbsent(team1Id, () => 0);
+      scoreDiff.putIfAbsent(team2Id, () => 0);
+
+      // 승자 판별 및 승수 반영
+      if (match.team1Score > match.team2Score) {
+        wins[team1Id] = wins[team1Id]! + 1;
+      } else {
+        wins[team2Id] = wins[team2Id]! + 1;
+      }
+
+      // 득실차 계산
+      scoreDiff[team1Id] = scoreDiff[team1Id]! + (match.team1Score - match.team2Score);
+      scoreDiff[team2Id] = scoreDiff[team2Id]! + (match.team2Score - match.team1Score);
+    }
+
+    // 순위 계산용 리스트 (teamId, wins, diff)
+    final List<Map<String, dynamic>> teamStats = wins.keys.map((id) {
+      return {
+        'id': id,
+        'wins': wins[id]!,
+        'diff': scoreDiff[id]!,
+      };
+    }).toList();
+
+    // 정렬: 승수 → 득실차 순
+    teamStats.sort((a, b) {
+      int aWins = a['wins'] as int;
+      int bWins = b['wins'] as int;
+      int winCompare = bWins.compareTo(aWins);
+      if (winCompare != 0) return winCompare;
+
+      int aDiff = a['diff'] as int;
+      int bDiff = b['diff'] as int;
+      return bDiff.compareTo(aDiff);
+    });
+
+
+    // 순위 매핑
+    final Map<String, int> ranks = {};
+    for (int i = 0; i < teamStats.length; i++) {
+      ranks[teamStats[i]['id'].toString()] = i + 1;
+    }
+
+    return ranks;
+  }
 
 
 
