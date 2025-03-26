@@ -1,84 +1,266 @@
 import 'package:flutter/material.dart';
 import '../services/firestore_service.dart';
 import '../model/Match.dart';
+import '../model/Team.dart';
 
 class MatchTablePage extends StatefulWidget {
+  final String tournamentId; // 대회 고유 ID
+
+  const MatchTablePage({Key? key, required this.tournamentId}) : super(key: key);
+
   @override
   _MatchTablePageState createState() => _MatchTablePageState();
 }
 
 class _MatchTablePageState extends State<MatchTablePage> {
   final FirestoreService _firestoreService = FirestoreService();
-  List<Match> matches = [];
+
+  Map<String, List<Match>> matchTable = {};
+  Map<String, int> divisionInfo = {};
+
+  String? selectedTableKey;
+  bool isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    _loadMatches();
+    _initializeMatchData();
   }
 
-  Future<void> _loadMatches() async {
-    matches = await _firestoreService.loadMatches();
-    setState(() {});
+  Future<void> _initializeMatchData() async {
+    try {
+      print("init");
+      // 부 정보 로드
+      divisionInfo = await _firestoreService.loadDivision("부");
+
+      // 팀 정보 로드 및 경기 생성
+      await _generateAllMatchesAndSave();
+
+      // 경기 정보 로드
+      matchTable = await _firestoreService.loadMatches();
+      print("-----");
+      print("matchTable_2 : $matchTable");
+
+      setState(() {
+        isLoading = false;
+        // 첫 번째 카테고리 자동 선택
+        selectedTableKey = matchTable.keys.isNotEmpty ? matchTable.keys.first : null;
+      });
+    } catch (e) {
+      print('데이터 초기화 중 오류 발생: $e');
+      setState(() => isLoading = false);
+    }
   }
 
-  Future<void> _saveMatches() async {
-    await _firestoreService.saveMatches(matches);
+  Future<void> _generateAllMatchesAndSave() async {
+    final maleTeams = await _firestoreService.loadTeams("남성 복식 팀");
+    final femaleTeams = await _firestoreService.loadTeams("여성 복식 팀");
+    final mixedTeams = await _firestoreService.loadTeams("혼성 복식 팀");
+
+    matchTable.clear();
+
+    void addMatches(String category, List<Team> teams, int maxDivision) {
+      for (int division = 1; division <= maxDivision; division++) {
+        var filteredTeams = teams.where((t) => t.division == division).toList();
+        matchTable["${category}_$division"] = _createMatches(filteredTeams, category, division);
+      }
+    }
+
+    addMatches("남성", maleTeams, divisionInfo["남성"] ?? 1);
+    addMatches("여성", femaleTeams, divisionInfo["여성"] ?? 1);
+    addMatches("혼성", mixedTeams, divisionInfo["혼성"] ?? 1);
+
+    print("matchTable_1 : $matchTable");
+
+    // 대회 ID와 함께 저장
+    await _firestoreService.saveMatches(matchTable, widget.tournamentId);
   }
 
-  void _updateMatchScore(int index, int team1Score, int team2Score) {
-    setState(() {
-      matches[index].team1Score = team1Score;
-      matches[index].team2Score = team2Score;
-      matches[index].isCompleted = true;
-    });
-    _saveMatches();
+  List<Match> _createMatches(List<Team> teams, String category, int division) {
+    List<Match> matches = [];
+    for (int i = 0; i < teams.length; i++) {
+      for (int j = i + 1; j < teams.length; j++) {
+        matches.add(Match(
+          id: "$category-${division}-${teams[i].id}-vs-${teams[j].id}",
+          team1: teams[i],
+          team2: teams[j],
+          division: division,
+        ));
+      }
+    }
+    return matches;
+  }
+
+  void _updateMatchScore(Match match, int team1Score, int team2Score) async {
+    try {
+      setState(() {
+        match.team1Score = team1Score;
+        match.team2Score = team2Score;
+        match.isCompleted = true;
+      });
+
+      // 대회 ID와 함께 경기 업데이트
+      await _firestoreService.updateMatch(
+          tournamentId: widget.tournamentId,
+          match: match
+      );
+    } catch (e) {
+      print('점수 업데이트 중 오류 발생: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('점수 저장에 실패했습니다.')),
+      );
+    }
+  }
+
+  //점수 다이얼로그
+  void _showScoreDialog(Match match) {
+    final team1Controller = TextEditingController();
+    final team2Controller = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text("${match.team1.id} vs ${match.team2.id}"),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: team1Controller,
+              keyboardType: TextInputType.number,
+              decoration: InputDecoration(
+                labelText: "${match.team1.id} 점수",
+              ),
+            ),
+            TextField(
+              controller: team2Controller,
+              keyboardType: TextInputType.number,
+              decoration: InputDecoration(
+                labelText: "${match.team2.id} 점수",
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text("취소"),
+          ),
+          TextButton(
+            onPressed: () {
+              final team1Score = int.tryParse(team1Controller.text);
+              final team2Score = int.tryParse(team2Controller.text);
+
+              if (team1Score != null && team2Score != null) {
+                _updateMatchScore(match, team1Score, team2Score);
+                Navigator.pop(context);
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('유효한 점수를 입력해주세요.')),
+                );
+              }
+            },
+            child: Text("저장"),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMatchTable(List<Match> matches) {
+    final teams = _getUniqueTeams(matches);
+
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: DataTable(
+        columns: [
+          DataColumn(label: Text("팀명")),
+          ...teams.map((t) => DataColumn(label: Text(t.id))).toList()
+        ],
+        rows: teams.map((rowTeam) {
+          return DataRow(
+            cells: [
+              DataCell(Text(rowTeam.id)),
+              ...teams.map((colTeam) {
+                if (rowTeam.id == colTeam.id) {
+                  return DataCell(Container());
+                }
+
+                final match = matches.firstWhere(
+                      (m) =>
+                  (m.team1.id == rowTeam.id && m.team2.id == colTeam.id) ||
+                      (m.team1.id == colTeam.id && m.team2.id == rowTeam.id),
+                  orElse: () => Match(
+                      id: '',
+                      team1: rowTeam,
+                      team2: colTeam,
+                      division: rowTeam.division
+                  ),
+                );
+
+                if (match.isCompleted) {
+                  return DataCell(
+                    Center(
+                      child: Text("${match.team1Score} - ${match.team2Score}"),
+                    ),
+                  );
+                }
+
+                return DataCell(
+                  InkWell(
+                    onTap: () => _showScoreDialog(match),
+                    child: Icon(Icons.edit, size: 16),
+                  ),
+                );
+              }).toList(),
+            ],
+          );
+        }).toList(),
+      ),
+    );
+  }
+
+  List<Team> _getUniqueTeams(List<Match> matches) {
+    final teams = <String, Team>{};
+    for (var match in matches) {
+      teams[match.team1.id] = match.team1;
+      teams[match.team2.id] = match.team2;
+    }
+    return teams.values.toList();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text("경기 진행")),
-      body: ListView.builder(
-        itemCount: matches.length,
-        itemBuilder: (context, index) {
-          return ListTile(
-            title: Text("${matches[index].team1.id} vs ${matches[index].team2.id}"),
-            subtitle: Text("점수: ${matches[index].team1Score} - ${matches[index].team2Score}"),
-            onTap: () => _showScoreDialog(index),
-          );
-        },
+      appBar: AppBar(title: Text("리그전 테이블")),
+      body: isLoading
+          ? Center(child: CircularProgressIndicator())
+          : Column(
+              children: [
+                Wrap(
+                  alignment: WrapAlignment.center,
+                  spacing: 12,
+                  children: matchTable.keys.map((category) {
+                    print("!@!@ $category");
+                    return Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Radio<String?>(
+                          value: category,
+                          groupValue: selectedTableKey,
+                          onChanged: (value) => setState(() => selectedTableKey = value),
+                          toggleable: true,
+                        ),
+                        Text(category),
+                      ],
+                    );
+                  }).toList(),
+                ),
+                if (selectedTableKey != null)
+                  Expanded(
+                    child: _buildMatchTable(matchTable[selectedTableKey!] ?? []),
+                  ),
+              ],
       ),
-    );
-  }
-
-  void _showScoreDialog(int index) {
-    TextEditingController team1Controller = TextEditingController();
-    TextEditingController team2Controller = TextEditingController();
-
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: Text("점수 입력"),
-          content: Column(
-            children: [
-              TextField(controller: team1Controller, decoration: InputDecoration(labelText: "팀1 점수")),
-              TextField(controller: team2Controller, decoration: InputDecoration(labelText: "팀2 점수")),
-            ],
-          ),
-          actions: [
-            TextButton(onPressed: () => Navigator.pop(context), child: Text("취소")),
-            TextButton(
-              onPressed: () {
-                _updateMatchScore(index, int.parse(team1Controller.text), int.parse(team2Controller.text));
-                Navigator.pop(context);
-              },
-              child: Text("저장"),
-            ),
-          ],
-        );
-      },
     );
   }
 }
