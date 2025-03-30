@@ -29,9 +29,9 @@ class _MatchStatusPageState extends State<MatchStatusPage> {
   }
 
 
-  Future<void> _assignMatchToCourt(Match match, int courtNumber) async {
+  Future<void> _assignMatchToCourt(Match match, int courtNumber, String gender, int division) async {
     match.courtNumber = courtNumber;
-    await _firestoreService.updateMatchCourt(match.id, courtNumber);
+    await _firestoreService.updateMatchCourt(match.id, courtNumber, gender, division);
     _loadMatches();
   }
 
@@ -74,13 +74,13 @@ class _MatchStatusPageState extends State<MatchStatusPage> {
       }
     }
 
-
-
     return SingleChildScrollView(
       child: Column(
         children: [
-          _buildCourtsGrid(ongoingMatches),
+          _buildCourtsGrid(ongoingMatches), //경기장 시각화
+
           SizedBox(height: 20),
+
           Text("대기 팀", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
           ...waitingMatches.map(_buildWaitingCard).toList(),
         ],
@@ -123,12 +123,14 @@ class _MatchStatusPageState extends State<MatchStatusPage> {
   }
 
   Widget _buildWaitingCard(Match match) {
-    String divisionLabel = "${match.team1.players[0].gender} ${match.division}부";
+    String gender = match.team1.players[0].gender;
+    int division = match.division;
+    String divisionLabel = "${gender} ${division}부";
     return Card(
       margin: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       child: Padding(
         padding: EdgeInsets.all(12),
-        child: Column(
+        child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(divisionLabel, style: TextStyle(fontWeight: FontWeight.bold)),
@@ -155,8 +157,7 @@ class _MatchStatusPageState extends State<MatchStatusPage> {
                   }
 
                   if (availableCourt != null) {
-                    _assignMatchToCourt(match, availableCourt);
-                    //todo 컬렉션 넣는 게 잘못 됨 매개변수 변경필요
+                    _assignMatchToCourt(match, availableCourt, gender, division);
                   } else {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(content: Text("모든 코트가 사용 중입니다.")),

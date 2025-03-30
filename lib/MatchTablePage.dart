@@ -61,7 +61,6 @@ class _MatchTablePageState extends State<MatchTablePage> {
   }
 
   Future<void> _generateAllMatchesAndSave() async {
-    isLoading = true;
     print("generateAllMatchesAndSave 시작 ${DateTime.now()}");
     final maleTeams = await _firestoreService.loadTeams("남성 복식 팀");
     final femaleTeams = await _firestoreService.loadTeams("여성 복식 팀");
@@ -365,11 +364,17 @@ class _MatchTablePageState extends State<MatchTablePage> {
   }
 
   void newGame()async{
-    await _generateAllMatchesAndSave();
-    matchTable = await _firestoreService.loadMatches();
     setState(() {
-      isLoading = false;
+      isLoading = true;
     });
+    await _generateAllMatchesAndSave();
+    Map<String, List<Match>> newMatchTable = await _firestoreService.loadMatches();
+    setState(() {
+      matchTable = newMatchTable;
+      isLoading = false;
+      selectedTableKey = newMatchTable.keys.isNotEmpty ? newMatchTable.keys.first : null;
+    });
+
   }
 
 
@@ -384,17 +389,17 @@ class _MatchTablePageState extends State<MatchTablePage> {
               children: [
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
+                  spacing: 10,
                   children: [
                     ElevatedButton(onPressed: debugPrint, child: Text("시간 출력")
                     ),
-                    ElevatedButton(onPressed: _generateAllMatchesAndSave, child: Text("새로운 게임 생성"))
+                    ElevatedButton(onPressed: newGame, child: Text("새로운 게임 생성"))
                   ],
                 ),
                 Wrap(
                   alignment: WrapAlignment.center,
                   spacing: 12,
                   children: matchTable.keys.map((category) {
-                    print("!@!@ $category");
                     return Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
