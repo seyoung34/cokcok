@@ -1,4 +1,5 @@
 import 'package:cokcok/CSVPage.dart';
+import 'package:cokcok/MatchStatuspage.dart';
 import 'TeamManagementPage.dart';
 import 'MatchTablePage.dart';
 import 'package:flutter/material.dart';
@@ -44,6 +45,7 @@ class _MainScreenState extends State<MainScreen> {
     CSVPage(), // 참가인원 관리 페이지
     TeamManagementPage(), // 팀 구성 페이지
     MatchTablePage(tournamentId: "콕콕 리그전",), // 경기 진행 페이지
+    MatchStatusPage()
   ];
 
   // 📌 탭 변경 시 실행되는 함수
@@ -65,7 +67,8 @@ class _MainScreenState extends State<MainScreen> {
         items: [
           BottomNavigationBarItem(icon: Icon(Icons.emoji_people), label: "참가인원관리"),
           BottomNavigationBarItem(icon: Icon(Icons.group), label: "팀 구성"),
-          BottomNavigationBarItem(icon: Icon(Icons.sports_tennis), label: "경기 진행"),
+          BottomNavigationBarItem(icon: Icon(Icons.sports_tennis), label: "점수 표"),
+          BottomNavigationBarItem(icon: Icon(Icons.sports_tennis), label: "경기 상황"),
         ],
         selectedItemColor: Colors.blue, // 선택된 아이템 색상
         unselectedItemColor: Colors.grey, // 선택되지 않은 아이템 색상

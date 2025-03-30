@@ -168,5 +168,16 @@ class FirestoreService {
   }
 
 
+  Future<void> updateMatchCourt(String matchId, int courtNumber) async {
+    await _db
+        .collection("경기 기록")
+        .doc("콕콕 리그전")
+        .collection("전체") // 전체 매치가 저장된 컬렉션
+        .doc(matchId)
+        .update({'courtNumber': courtNumber});
+  }
+
+
+
 
 }
