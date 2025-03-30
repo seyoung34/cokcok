@@ -21,8 +21,6 @@ class FirestoreService {
   // 🔹 팀 불러오기
   Future<List<Team>> loadTeams(String category) async {
     QuerySnapshot snapshot = await _db.collection(category).get();
-    // print("~~~$category");
-    // print(snapshot.docs.map((e) => e.data()));
     return snapshot.docs.map((doc) => Team.fromJson(doc.data() as Map<String, dynamic>)).toList();
   }
 
@@ -89,9 +87,7 @@ class FirestoreService {
         final matchDoc = divisionDoc.collection('경기').doc(match.id);
         batch.set(matchDoc, match.toJson());
       }
-      print("---$category 끝 : ${DateTime.now()}");
     }
-    print("반복문 종료 : ${DateTime.now()}");
 
     // ✅ 한 번에 커밋
     await batch.commit();
@@ -99,39 +95,75 @@ class FirestoreService {
   }
 
   //경기 데이터 불러오기
+  // Future<Map<String, List<Match>>> loadMatches({String gender = " "}) async {
+  //   print("loadMatches 시작 ${DateTime.now()}");
+  //   Map<String, List<Match>> matchTable = {};
+  //
+  //   List<String> categories = ['남성', '여성', '혼성'];
+  //
+  //   if(gender != " "){
+  //       categories = [gender];
+  //   }
+  //
+  //   for (String category in categories) {
+  //     var categorySnapshot = await _db
+  //         .collection('경기 기록')
+  //         .doc('콕콕 리그전')
+  //         .collection(category)
+  //         .get();
+  //
+  //
+  //     for (var divisionDoc in categorySnapshot.docs) {
+  //       if(divisionDoc == null) print("divisoinDoc is null!!");
+  //       var matchesSnapshot = await divisionDoc.reference
+  //           .collection('경기')
+  //           .get();
+  //
+  //
+  //       String key = '${category}_${divisionDoc.id}';
+  //       matchTable[key] = matchesSnapshot.docs
+  //           .map((doc) => Match.fromJson(doc.data()))
+  //           .toList();
+  //     }
+  //   }
+  //
+  //   return matchTable;
+  // }
+
+  //경기 데이터 불러오기 (비동기 병렬 처리)
   Future<Map<String, List<Match>>> loadMatches({String gender = " "}) async {
     Map<String, List<Match>> matchTable = {};
-
     List<String> categories = ['남성', '여성', '혼성'];
 
-    if(gender != " "){
-        categories = [gender];
+    if (gender.trim().isNotEmpty) {
+      categories = [gender];
     }
 
     for (String category in categories) {
-      var categorySnapshot = await _db
+      // 🔹 division 문서들 비동기로 가져오기
+      var divisionSnapshot = await _db
           .collection('경기 기록')
           .doc('콕콕 리그전')
           .collection(category)
           .get();
 
-
-      for (var divisionDoc in categorySnapshot.docs) {
-        if(divisionDoc == null) print("divisoinDoc is null!!");
-        var matchesSnapshot = await divisionDoc.reference
-            .collection('경기')
-            .get();
-
+      // 🔹 division마다의 경기 리스트를 동시에 요청 (병렬 처리 핵심)
+      List<Future<void>> futures = divisionSnapshot.docs.map((divisionDoc) async {
+        var matchesSnapshot = await divisionDoc.reference.collection('경기').get();
 
         String key = '${category}_${divisionDoc.id}';
         matchTable[key] = matchesSnapshot.docs
             .map((doc) => Match.fromJson(doc.data()))
             .toList();
-      }
+      }).toList();
+
+      // 🔹 모든 division의 경기 정보를 병렬로 기다림
+      await Future.wait(futures);
     }
 
     return matchTable;
   }
+
 
 
   //부 저장

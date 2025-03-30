@@ -22,9 +22,12 @@ class _MatchTablePageState extends State<MatchTablePage> {
   String? selectedTableKey;
   bool isLoading = true;
 
+  late Stopwatch _stopwatch;
+
   @override
   void initState() {
     super.initState();
+    _stopwatch = Stopwatch()..start();
     _initializeMatchData();
   }
 
@@ -32,18 +35,19 @@ class _MatchTablePageState extends State<MatchTablePage> {
 
   Future<void> _initializeMatchData() async {
     try {
+      print("init 시작 : ${_stopwatch.elapsedMilliseconds}");
       // 부 정보 로드
       divisionInfo = await _firestoreService.loadDivision("부");
+      print("loadDivision 종료 ${_stopwatch.elapsedMilliseconds}");
 
-      //note 최초 실행 시 진행할건지 다이얼로그 띄워야함
 
       // 팀 정보 로드 및 경기 생성
-      await _generateAllMatchesAndSave(); //save까지함
-
+      // await _generateAllMatchesAndSave(); //save까지함
 
       // 경기 정보 로드
       matchTable = await _firestoreService.loadMatches(); //이미 matchTable에 정보 있으니깐 최초 실행 때 불러오기 안해도 될 듯?
         //근데 또 사용자 입장에서 보면 동기화해야하니깐 불러오는게 낫겠다..
+      print("loadMatches 종료 : ${_stopwatch.elapsedMilliseconds}");
 
       setState(() {
         isLoading = false;
@@ -57,6 +61,8 @@ class _MatchTablePageState extends State<MatchTablePage> {
   }
 
   Future<void> _generateAllMatchesAndSave() async {
+    isLoading = true;
+    print("generateAllMatchesAndSave 시작 ${DateTime.now()}");
     final maleTeams = await _firestoreService.loadTeams("남성 복식 팀");
     final femaleTeams = await _firestoreService.loadTeams("여성 복식 팀");
     final mixedTeams = await _firestoreService.loadTeams("혼성 복식 팀");
@@ -354,6 +360,17 @@ class _MatchTablePageState extends State<MatchTablePage> {
     return ranks;
   }
 
+  void debugPrint(){
+    print("클릭 : ${_stopwatch.elapsedMilliseconds}");
+  }
+
+  void newGame()async{
+    await _generateAllMatchesAndSave();
+    matchTable = await _firestoreService.loadMatches();
+    setState(() {
+      isLoading = false;
+    });
+  }
 
 
   //note build
@@ -365,6 +382,14 @@ class _MatchTablePageState extends State<MatchTablePage> {
           ? Center(child: CircularProgressIndicator())
           : Column(
               children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    ElevatedButton(onPressed: debugPrint, child: Text("시간 출력")
+                    ),
+                    ElevatedButton(onPressed: _generateAllMatchesAndSave, child: Text("새로운 게임 생성"))
+                  ],
+                ),
                 Wrap(
                   alignment: WrapAlignment.center,
                   spacing: 12,
