@@ -68,32 +68,7 @@ class _TeamManagementPageState extends State<TeamManagementPage> {
     print("팀 정보 저장");
   }
 
-  /// 📌 SharedPreferences에 현재 상태 저장
-  // Future<void> _saveState() async {
-  //   SharedPreferences prefs = await SharedPreferences.getInstance();
-  //
-  //   // ✅ 현재 division 설정 저장
-  //   await prefs.setInt("남성_division", divisionCounts["남성"] ?? 1);
-  //   await prefs.setInt("여성_division", divisionCounts["여성"] ?? 1);
-  //   await prefs.setInt("혼성_division", divisionCounts["혼성"] ?? 1);
-  //
-  //   // ✅ 현재 선택된 카테고리 저장
-  //   await prefs.setString("selectedCategory", selectedCategory ?? "");
-  // }
 
-  /// 📌 SharedPreferences에서 저장된 상태 불러오기
-  // Future<void> _loadState() async {
-  //   SharedPreferences prefs = await SharedPreferences.getInstance();
-  //
-  //   setState(() {
-  //     divisionCounts["남성"] = prefs.getInt("남성_division") ?? 1;
-  //     divisionCounts["여성"] = prefs.getInt("여성_division") ?? 1;
-  //     divisionCounts["혼성"] = prefs.getInt("혼성_division") ?? 1;
-  //     selectedCategory = prefs.getString("selectedCategory")?.isNotEmpty ?? false
-  //         ? prefs.getString("selectedCategory")
-  //         : null;
-  //   });
-  // }
 
   //부 정보 불러오기
   Future<void> _loadDivision() async{

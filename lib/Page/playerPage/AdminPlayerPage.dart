@@ -135,8 +135,8 @@ class _AdminPlayerPageState extends PlayerPageBaseState<AdminPlayerPage> {
   }
 
   // 🔹 전체 삭제
-  Future<void> _deleteAll() async {
-    final snapshot = await FirebaseFirestore.instance.collection("참가자").get();
+  Future<void> _deleteCollection(String category) async {
+    final snapshot = await FirebaseFirestore.instance.collection(category).get();
     final batch = FirebaseFirestore.instance.batch();
 
     for (var doc in snapshot.docs) {
@@ -144,7 +144,17 @@ class _AdminPlayerPageState extends PlayerPageBaseState<AdminPlayerPage> {
     }
 
     await batch.commit();
+
+  }
+
+  Future<void> _deleteAll() async {
+    await _deleteCollection("참가자");
+    await _deleteCollection("남성 복식 팀");
+    await _deleteCollection("여성 복식 팀");
+    await _deleteCollection("혼성 복식 팀");
+
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("전체 삭제 완료")));
     await loadPlayers(); // 새로고침
   }
+
 }
