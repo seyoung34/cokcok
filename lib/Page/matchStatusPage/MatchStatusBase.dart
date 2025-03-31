@@ -68,6 +68,7 @@ abstract class MatchStatusBaseState<T extends MatchStatusBase> extends State<T> 
     return SingleChildScrollView(
       child: Column(
         children: [
+          SizedBox(height: 20,),
           _buildCourtsGrid(ongoingMatches),
           const SizedBox(height: 20),
           const Text("대기 팀", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
@@ -82,6 +83,7 @@ abstract class MatchStatusBaseState<T extends MatchStatusBase> extends State<T> 
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       crossAxisCount: 4,
+      childAspectRatio: 0.8,
       children: List.generate(12, (index) {
         int courtNum = index + 1;
         final match = matches.firstWhere(
