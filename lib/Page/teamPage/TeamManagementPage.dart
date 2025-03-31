@@ -2,9 +2,9 @@ import 'dart:convert';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../services/firestore_service.dart';
-import 'model/Player.dart';
-import 'model/Team.dart';
+import '../../services/firestore_service.dart';
+import '../../model/Player.dart';
+import '/model/Team.dart';
 
 class TeamManagementPage extends StatefulWidget {
   @override

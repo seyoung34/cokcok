@@ -4,7 +4,7 @@ import 'dart:html' as html;
 import 'package:flutter/material.dart';
 import 'package:csv/csv.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'model/Player.dart';
+import '../../model/Player.dart';
 
 
 class CSVPage extends StatefulWidget {
@@ -354,8 +354,6 @@ class _CSVPageState extends State<CSVPage> {
   }
 
 
-
-
   //테이블 만들기
   Widget _buildDataTable(
       List<Player> data,
@@ -433,85 +431,7 @@ class _CSVPageState extends State<CSVPage> {
   }
 
 
-  //Player 데이터 sharedPreference에 저장하기
-  Future<void> savePlayersToSharedPreferences(List<Player> players, String key) async {
-    final prefs = await SharedPreferences.getInstance();
-    List<String> playersJson =
-        players.map((player) => jsonEncode(player.toJson())).toList();
-    await prefs.setStringList(key, playersJson);
-  }
-
-  //sharedPreference에서 List<Player>를 불러오기
-  Future<List<Player>> loadPlayersFromSharedPreferences(String key) async {
-    final prefs = await SharedPreferences.getInstance();
-    List<String>? playersJson = prefs.getStringList(key);
-
-    if (playersJson == null) return []; // 저장된 데이터가 없을 경우 빈 리스트 반환
-
-    List<Player> players =
-        playersJson.map((json) => Player.fromJson(jsonDecode(json))).toList();
-    print("📌 [$key] 불러오기 완료: $players");
-    return players;
-  }
-
-  // sharedPreference 저장하는 함수 종류별 호출
-  // void callSavePlayersToSharedPreferences() {
-  //   savePlayersToSharedPreferences(_malePlayers, "남성 참가자");
-  //   savePlayersToSharedPreferences(_femalePlayers, "여성 참가자");
-  //   savePlayersToSharedPreferences(_mixedPlayers, "혼복 참가자");
-  //   loadTableData();
-  // }
-
-  //sharedPreference에서 불러와서 데이터 셋팅, 자동 ui변경
-  // void loadTableData() async {
-  //   setState(() {
-  //     _malePlayers = [];
-  //     _femalePlayers = [];
-  //     _mixedPlayers = [];
-  //   });
-  //
-  //   List<Player> maleData = await loadPlayersFromSharedPreferences("남성 참가자");
-  //   List<Player> femaleData = await loadPlayersFromSharedPreferences("여성 참가자");
-  //   List<Player> mixedData = await loadPlayersFromSharedPreferences("혼복 참가자");
-  //
-  //   setState(() {
-  //     _malePlayers = maleData;
-  //     _femalePlayers = femaleData;
-  //     _mixedPlayers = mixedData;
-  //   });
-  //
-  //   print("📌 SharedPreferences 데이터 로드 완료.");
-  // }
-
-  //sharedPreference의 데이터 삭제(남성,여성,혼복 참가자)
-  // void deleteData() async {
-  //   final prefs = await SharedPreferences.getInstance();
-  //   await prefs.remove("남성 참가자");
-  //   await prefs.remove("여성 참가자");
-  //   await prefs.remove("혼복 참가자");
-  //
-  //   print("📌 SharedPreferences 데이터 삭제 완료.");
-  //
-  //   // 삭제 후 UI 업데이트
-  //   loadTableData();
-  // }
-
-
-  // 확인 버튼 ( 파일을 업로드 후 1행 제거, 성별과 혼복여부에 따라 데이터 분류
-  // void convertFileButton(){
-  //   if(selectedFile != null) { //업로드 되어 있으면
-  //     // _convertCSVToPlayers(_csvData.sublist(1));  //sharedPrefenece에 변환해서 저장됨
-  //
-  //     // SharedPreferences에서 데이터를 다시 불러와 테이블 업데이트
-  //     loadTableData();
-  //
-  //     setState(() {
-  //       selectedFile = null;
-  //     });
-  //   }
-  // }
-
-
+  //note build
   @override
   Widget build(BuildContext context) {
     return Scaffold(

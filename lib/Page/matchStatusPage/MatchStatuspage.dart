@@ -1,8 +1,8 @@
 import 'package:cokcok/services/firestore_service.dart';
 import 'package:flutter/material.dart';
-import 'model/Match.dart';
-import 'model/Match.dart';
-import 'model/Team.dart';
+import '/model/Match.dart';
+import '/model/Match.dart';
+import '/model/Team.dart';
 
 class MatchStatusPage extends StatefulWidget {
   @override

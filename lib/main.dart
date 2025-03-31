@@ -1,15 +1,13 @@
-import 'package:cokcok/CSVPage.dart';
-import 'package:cokcok/MatchStatuspage.dart';
-import 'TeamManagementPage.dart';
-import 'MatchTablePage.dart';
-import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/material.dart';
+import 'Page/playerPage/UserPlayerPage.dart';
+import 'Page/playerPage/AdminPlayerPage.dart';
 import 'firebase_options.dart';
 
-void main() async{
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
+    options: DefaultFirebaseOptions.currentPlatform, // 이 줄이 중요!
   );
   runApp(const MyApp());
 }
@@ -17,63 +15,79 @@ void main() async{
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      // title: 'Flutter Demo',
-      // theme: ThemeData(
-      //   colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-      //   useMaterial3: true,
-      // ),
-      home: MainScreen(),
+      home: const HomePage(),
     );
   }
 }
 
-class MainScreen extends StatefulWidget {
+class HomePage extends StatefulWidget {
+  const HomePage({super.key});
+
   @override
-  _MainScreenState createState() => _MainScreenState();
+  State<HomePage> createState() => _HomePageState();
 }
 
-class _MainScreenState extends State<MainScreen> {
-  int _selectedIndex = 1; // 현재 선택된 탭 인덱스
+class _HomePageState extends State<HomePage> {
+  bool isAdmin = false; // 기본은 사용자 모드
+  int selectedIndex = 0; // 현재 바텀탭 인덱스
 
-  // 📌 각 탭에 연결될 페이지 리스트
-  final List<Widget> _pages = [
-    CSVPage(), // 참가인원 관리 페이지
-    TeamManagementPage(), // 팀 구성 페이지
-    MatchTablePage(tournamentId: "콕콕 리그전",), // 경기 진행 페이지
-    MatchStatusPage()
-  ];
+  void _showAdminDialog() {
+    final TextEditingController passwordController = TextEditingController();
 
-  // 📌 탭 변경 시 실행되는 함수
-  void _onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
-    });
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text("운영자 모드 진입"),
+          content: TextField(
+            controller: passwordController,
+            obscureText: true,
+            decoration: const InputDecoration(labelText: "비밀번호 입력"),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context), // 닫기
+              child: const Text("취소"),
+            ),
+            TextButton(
+              onPressed: () {
+                if (passwordController.text == "1234") {
+                  setState(() => isAdmin = true);
+                  Navigator.pop(context);
+                } else {
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text("비밀번호가 틀렸습니다")),
+                  );
+                }
+              },
+              child: const Text("확인"),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: _pages[_selectedIndex], // 선택된 페이지 표시
+    Widget currentPage = isAdmin ? const AdminPlayerPage() : UserPlayerPage(onAdminRequest: _showAdminDialog);
 
-      // 📌 BottomNavigationBar 추가
+    return Scaffold(
+      body: currentPage,
       bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _selectedIndex, // 현재 선택된 탭
-        onTap: _onItemTapped, // 탭 클릭 시 호출
-        items: [
-          BottomNavigationBarItem(icon: Icon(Icons.emoji_people), label: "참가인원관리"),
-          BottomNavigationBarItem(icon: Icon(Icons.group), label: "팀 구성"),
-          BottomNavigationBarItem(icon: Icon(Icons.sports_tennis), label: "점수 표"),
-          BottomNavigationBarItem(icon: Icon(Icons.sports_tennis), label: "경기 상황"),
+        currentIndex: selectedIndex,
+        onTap: (index) => setState(() => selectedIndex = index),
+        items: const [
+          BottomNavigationBarItem(icon: Icon(Icons.people), label: '참가자'),
+          BottomNavigationBarItem(icon: Icon(Icons.people), label: '참가자2'),
+          // 향후 추가 가능: 팀, 경기 등
         ],
-        selectedItemColor: Colors.blue, // 선택된 아이템 색상
-        unselectedItemColor: Colors.grey, // 선택되지 않은 아이템 색상
       ),
     );
   }
 }
-

@@ -6,6 +6,22 @@ import '../model/Match.dart';
 class FirestoreService {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
 
+
+  //참가자 불러오기
+  Future<List<Player>> loadPlayer() async{
+    List<Player> playerList = [];
+
+    QuerySnapshot snapshot = await _db.collection("참가자").get();
+
+    for (var doc in snapshot.docs) {
+      Player player = Player.fromJson(doc.data() as Map<String, dynamic>);
+      playerList.add(player);
+    }
+
+    return playerList;
+  }
+
+
   // 🔹 팀 저장
   Future<void> saveTeams(List<Team> teams, String category) async {
     final batch = _db.batch();
@@ -37,6 +53,7 @@ class FirestoreService {
   }
 
   // 🔹 참가자 불러오기
+  //team에서 사용됨
   Future<List<Player>> loadPlayers(String category, String gender, {bool sortByRank = false}) async {
     Query query = _db
         .collection(category)

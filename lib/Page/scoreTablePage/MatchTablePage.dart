@@ -1,8 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import '../services/firestore_service.dart';
-import '../model/Match.dart';
-import '../model/Team.dart';
+import '../../services/firestore_service.dart';
+import '../../model/Match.dart';
+import '../../model/Team.dart';
 
 class MatchTablePage extends StatefulWidget {
   final String tournamentId; // 대회 고유 ID
