@@ -152,6 +152,8 @@ class _AdminPlayerPageState extends PlayerPageBaseState<AdminPlayerPage> {
     await _deleteCollection("남성 복식 팀");
     await _deleteCollection("여성 복식 팀");
     await _deleteCollection("혼성 복식 팀");
+    await _deleteCollection("경기 기록");
+    await _deleteCollection("부");
 
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("전체 삭제 완료")));
     await loadPlayers(); // 새로고침

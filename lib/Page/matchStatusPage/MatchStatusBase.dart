@@ -19,7 +19,7 @@ abstract class MatchStatusBaseState<T extends MatchStatusBase> extends State<T> 
   @override
   void initState() {
     super.initState();
-    _loadMatches();
+    // _loadMatches();
   }
 
   Future<void> _loadMatches() async {
@@ -31,52 +31,9 @@ abstract class MatchStatusBaseState<T extends MatchStatusBase> extends State<T> 
   Future<void> _assignMatchToCourt(Match match, int courtNumber, String gender, int division) async {
     match.courtNumber = courtNumber;
     await _firestoreService.updateMatchCourt(match.id, courtNumber, gender, division);
-    _loadMatches();
+    // _loadMatches();
   }
-
-  /*@override
-  Widget build(BuildContext context) {
-    if (isLoading) return const Center(child: CircularProgressIndicator());
-
-    List<Match> ongoingMatches = allMatches
-        .where((m) => m.courtNumber != null && !m.isCompleted)
-        .toList();
-
-    List<String> activeTeamIds = ongoingMatches
-        .expand((m) => [m.team1.id, m.team2.id])
-        .toSet()
-        .toList();
-
-    List<Match> waitingMatches = [];
-    Set<String> waitingTeamIds = {};
-
-    for (var match in allMatches) {
-      if (match.courtNumber == null && !match.isCompleted) {
-        if (activeTeamIds.contains(match.team1.id) ||
-            activeTeamIds.contains(match.team2.id) ||
-            waitingTeamIds.contains(match.team1.id) ||
-            waitingTeamIds.contains(match.team2.id)) continue;
-
-        waitingMatches.add(match);
-        waitingTeamIds.add(match.team1.id);
-        waitingTeamIds.add(match.team2.id);
-
-        if (waitingMatches.length >= 3) break;
-      }
-    }
-
-    return SingleChildScrollView(
-      child: Column(
-        children: [
-          SizedBox(height: 20,),
-          _buildCourtsGrid(ongoingMatches),
-          const SizedBox(height: 20),
-          const Text("대기 팀", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-          ...waitingMatches.map(_buildWaitingCard).toList(),
-        ],
-      ),
-    );
-  }*/
+  
 
   @override
   Widget build(BuildContext context) {
@@ -86,6 +43,9 @@ abstract class MatchStatusBaseState<T extends MatchStatusBase> extends State<T> 
         if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
 
         final allMatches = snapshot.data!;
+        for(Match match in allMatches){
+          print("${match.id}");
+        }
 
         // 진행 중 + 대기 경기 분류 (기존 로직 유지)
         final ongoingMatches = allMatches.where((m) => m.courtNumber != null && !m.isCompleted).toList();
@@ -147,18 +107,29 @@ abstract class MatchStatusBaseState<T extends MatchStatusBase> extends State<T> 
         return Container(
           margin: const EdgeInsets.all(4),
           decoration: BoxDecoration(
-            border: Border.all(color: Colors.black),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: Colors.black54),
             color: match.id == "" ? Colors.grey[200] : Colors.lightGreen[200],
           ),
-          child: Center(
-            child: match.id == "" ? Text("코트 $courtNum\n(비어 있음)", textAlign: TextAlign.center)
-                : Text("${match.team1.id}\nvs\n${match.team2.id}", textAlign: TextAlign.center),
-          ),
+          child:
+            Center(
+              child: match.id == "" ? Text("코트 $courtNum\n(비어 있음)", textAlign: TextAlign.center)
+                  : Container(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text("${match.team1.players[0].name}\n${match.team1.players[1].name}", textAlign: TextAlign.center),
+                          Divider(color: Colors.grey, thickness: 1,),
+                          Text("${match.team2.players[0].name}\n${match.team2.players[1].name}", textAlign: TextAlign.center),
+                        ],
+                      )),
+            ),
         );
       }),
     );
   }
 
+  ///대기팀
   Widget _buildWaitingCard(Match match) {
     final gender = match.team1.players[0].gender;
     final division = match.division;

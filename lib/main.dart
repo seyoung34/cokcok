@@ -24,7 +24,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      theme: ThemeData(scaffoldBackgroundColor: Colors.white),
+      theme: ThemeData(scaffoldBackgroundColor: Colors.grey.shade50, fontFamily: 'BMJUA'),
       debugShowCheckedModeBanner: false,
       home: const HomePage(),
     );
@@ -88,20 +88,35 @@ class _HomePageState extends State<HomePage> {
     return Scaffold(
       // AppBar는 각 페이지 내부에서 처리
       body: pages[selectedIndex],
-      bottomNavigationBar: BottomNavigationBar(
-        type: BottomNavigationBarType.fixed,
-        backgroundColor: Colors.yellow.shade100,
-        fixedColor: Colors.green.shade500,
-        currentIndex: selectedIndex,
-        onTap: (index) => setState(() => selectedIndex = index),
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.people), label: '참가자'),
-          BottomNavigationBarItem(icon: Icon(Icons.groups), label: '팀 구성'),
-          BottomNavigationBarItem(icon: Icon(Icons.sports_tennis), label: '점수표'),
-          BottomNavigationBarItem(icon: Icon(Icons.sports_tennis), label: '진행 상황'),
-        ],
-      ),
+      bottomNavigationBar:
+        Container(
+          decoration: BoxDecoration(
+            border: Border(top: BorderSide(color: Colors.grey.shade300, width: 1)),
+            borderRadius: BorderRadius.only(
+              topLeft: Radius.circular(20),
+              topRight: Radius.circular(20)
+          )
+          ),
+          child: ClipRRect(
+            borderRadius: const BorderRadius.only(
+              topLeft: Radius.circular(20),
+              topRight: Radius.circular(20),
+              ),
+            child :BottomNavigationBar(
+              type: BottomNavigationBarType.fixed,
+              backgroundColor: Colors.yellow.shade100,
+              fixedColor: Colors.green.shade500,
+              currentIndex: selectedIndex,
+              onTap: (index) => setState(() => selectedIndex = index),
+              items: const [
+                BottomNavigationBarItem(icon: Icon(Icons.people), label: '참가자'),
+                BottomNavigationBarItem(icon: Icon(Icons.groups), label: '팀 구성'),
+                BottomNavigationBarItem(icon: Icon(Icons.sports_tennis), label: '점수표'),
+                BottomNavigationBarItem(icon: Icon(Icons.personal_video), label: '진행 상황'),
+              ],
+          ),
 
-    );
+              ),
+        ));
   }
 }

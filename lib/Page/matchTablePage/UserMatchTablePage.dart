@@ -15,6 +15,7 @@ class UserMatchTablePage extends MatchTableBase {
 class _UserMatchTablePageState extends MatchTableBaseState<UserMatchTablePage> {
   @override
   Widget buildMatchTable(List<Match> matches) {
+    final isMobile = MediaQuery.of(context).size.width < 600;
     final teams = getUniqueTeams(matches);
     final teamStats = calculateStats(matches, teams);
 
@@ -39,7 +40,7 @@ class _UserMatchTablePageState extends MatchTableBaseState<UserMatchTablePage> {
               columns: [
                 const DataColumn(label: Text("팀명")),
                 ...teams.map((t) => DataColumn(label: Text(t.id))),
-                const DataColumn(label: Text("순위")),
+                const DataColumn(label: Text("순위",style: TextStyle(fontFamily: 'BMJUA'),)),
                 const DataColumn(label: Text("승점")),
                 const DataColumn(label: Text("득실")),
               ],
@@ -75,4 +76,5 @@ class _UserMatchTablePageState extends MatchTableBaseState<UserMatchTablePage> {
       ),
     );
   }
+
 }
