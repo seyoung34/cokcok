@@ -12,97 +12,72 @@ class AdminMatchTablePage extends MatchTableBase {
   _AdminMatchTablePageState createState() => _AdminMatchTablePageState();
 }
 
-class _AdminMatchTablePageState
-    extends MatchTableBaseState<AdminMatchTablePage> {
-  final FirestoreService _firestoreService = FirestoreService();
-
-  Future<void> _generateAllMatchesAndSave() async {
-    setState(() => isLoading = true);
-
-    final maleTeams = await _firestoreService.loadTeams("남성 복식 팀");
-    final femaleTeams = await _firestoreService.loadTeams("여성 복식 팀");
-    final mixedTeams = await _firestoreService.loadTeams("혼성 복식 팀");
-
-    matchTable.clear();
-
-    void addMatches(String category, List<Team> teams, int maxDiv) {
-      for (int division = 1; division <= maxDiv; division++) {
-        final filtered = teams.where((t) => t.division == division).toList();
-        matchTable["${category}_$division"] = _createMatches(filtered, category, division);
-      }
-    }
-
-    addMatches("남성", maleTeams, divisionInfo["남성"] ?? 1);
-    addMatches("여성", femaleTeams, divisionInfo["여성"] ?? 1);
-    addMatches("혼성", mixedTeams, divisionInfo["혼성"] ?? 1);
-
-    await _firestoreService.saveMatches(matchTable, widget.tournamentId);
-
-    setState(() {
-      isLoading = false;
-      selectedTableKey = matchTable.keys.firstOrNull;
-    });
-  }
-
-  List<Match> _createMatches(List<Team> teams, String category, int division) {
-    List<Match> matches = [];
-    for (int i = 0; i < teams.length; i++) {
-      for (int j = i + 1; j < teams.length; j++) {
-        matches.add(Match(
-          id: "${teams[i].id} VS ${teams[j].id}",
-          team1: teams[i],
-          team2: teams[j],
-          division: division,
-        ));
-      }
-    }
-    return matches;
-  }
-
+class _AdminMatchTablePageState extends MatchTableBaseState<AdminMatchTablePage> {
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text("운영자 - 점수 테이블")),
-      body: isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : Column(
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              ElevatedButton(
-                onPressed: _generateAllMatchesAndSave,
-                child: const Text("새로운 게임 생성"),
-              ),
-            ],
+  Widget buildMatchTable(List<Match> matches) {
+    final teams = getUniqueTeams(matches);
+    final gender = matches[0].team1.players[0].gender;
+    final teamStats = calculateStats(matches, teams);
+
+    return _buildDataTable(teams, matches, teamStats, gender, isAdmin: true);
+  }
+
+
+  Widget _buildDataTable(List<Team> teams, List<Match> matches, Map<String, Map<String, dynamic>> stats, String gender, {required bool isAdmin}) {
+    return Scrollbar(
+      thumbVisibility: true,
+      controller: verticalController,
+      child: SingleChildScrollView(
+        controller: verticalController,
+        scrollDirection: Axis.vertical,
+        child: Scrollbar(
+          thumbVisibility: true,
+          controller: horizontalController,
+          child: SingleChildScrollView(
+            controller: horizontalController,
+            scrollDirection: Axis.horizontal,
+            child: DataTable(
+              columns: [
+                const DataColumn(label: Text("팀명")),
+                ...teams.map((t) => DataColumn(label: Text(t.id))),
+                const DataColumn(label: Text("순위")),
+                const DataColumn(label: Text("승점")),
+                const DataColumn(label: Text("득실")),
+              ],
+              rows: teams.map((rowTeam) {
+                return DataRow(cells: [
+                  DataCell(Text(rowTeam.id)),
+                  ...teams.map((colTeam) {
+                    if (rowTeam.id == colTeam.id) return const DataCell(SizedBox());
+
+                    final match = matches.firstWhere(
+                          (m) => (m.team1.id == rowTeam.id && m.team2.id == colTeam.id) ||
+                          (m.team1.id == colTeam.id && m.team2.id == rowTeam.id),
+                      orElse: () => Match(id: '', team1: rowTeam, team2: colTeam, division: rowTeam.division),
+                    );
+
+                    if (match.isCompleted) {
+                      final score = rowTeam.id == match.team2.id
+                          ? "${match.team2Score} - ${match.team1Score}"
+                          : "${match.team1Score} - ${match.team2Score}";
+                      return DataCell(Center(child: Text(score)));
+                    }
+
+                    return DataCell(
+                      InkWell(
+                        onTap: () => showScoreDialog(match, gender),
+                        child: const Icon(Icons.edit, size: 16),
+                      ),
+                    );
+                  }),
+                  DataCell(Text("${stats[rowTeam.id]!["rank"]}")),
+                  DataCell(Text("${stats[rowTeam.id]!["wins"]}")),
+                  DataCell(Text("${stats[rowTeam.id]!["diff"]}")),
+                ]);
+              }).toList(),
+            ),
           ),
-          const SizedBox(height: 8),
-          Wrap(
-            alignment: WrapAlignment.center,
-            spacing: 12,
-            children: matchTable.keys.map((key) {
-              return Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Radio<String?>(
-                    value: key,
-                    groupValue: selectedTableKey,
-                    onChanged: (value) => setState(() => selectedTableKey = value),
-                    toggleable: true,
-                  ),
-                  Text(key),
-                ],
-              );
-            }).toList(),
-          ),
-          const SizedBox(height: 8),
-          if (selectedTableKey != null)
-            Expanded(
-              child: buildMatchTable(matchTable[selectedTableKey!] ?? []),
-            )
-          else
-            const Text("표시할 경기가 없습니다."),
-        ],
+        ),
       ),
     );
   }
