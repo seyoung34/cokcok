@@ -34,7 +34,7 @@ abstract class MatchStatusBaseState<T extends MatchStatusBase> extends State<T> 
     _loadMatches();
   }
 
-  @override
+  /*@override
   Widget build(BuildContext context) {
     if (isLoading) return const Center(child: CircularProgressIndicator());
 
@@ -76,8 +76,54 @@ abstract class MatchStatusBaseState<T extends MatchStatusBase> extends State<T> 
         ],
       ),
     );
+  }*/
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<List<Match>>(
+      stream: _firestoreService.watchAllMatches(),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
+
+        final allMatches = snapshot.data!;
+
+        // 진행 중 + 대기 경기 분류 (기존 로직 유지)
+        final ongoingMatches = allMatches.where((m) => m.courtNumber != null && !m.isCompleted).toList();
+        final activeTeamIds = ongoingMatches.expand((m) => [m.team1.id, m.team2.id]).toSet();
+
+        final waitingMatches = <Match>[];
+        final waitingTeamIds = <String>{};
+
+        for (var match in allMatches) {
+          if (match.courtNumber == null && !match.isCompleted) {
+            if (activeTeamIds.contains(match.team1.id) ||
+                activeTeamIds.contains(match.team2.id) ||
+                waitingTeamIds.contains(match.team1.id) ||
+                waitingTeamIds.contains(match.team2.id)) continue;
+
+            waitingMatches.add(match);
+            waitingTeamIds.add(match.team1.id);
+            waitingTeamIds.add(match.team2.id);
+            if (waitingMatches.length >= 3) break;
+          }
+        }
+
+        return SingleChildScrollView(
+          child: Column(
+            children: [
+              _buildCourtsGrid(ongoingMatches),
+              const SizedBox(height: 20),
+              const Text("대기 팀", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+              ...waitingMatches.map(_buildWaitingCard).toList(),
+            ],
+          ),
+        );
+      },
+    );
   }
 
+
+  ///코트 상황 판
   Widget _buildCourtsGrid(List<Match> matches) {
     return GridView.count(
       shrinkWrap: true,
@@ -97,6 +143,7 @@ abstract class MatchStatusBaseState<T extends MatchStatusBase> extends State<T> 
           ),
         );
 
+        ///UI부분
         return Container(
           margin: const EdgeInsets.all(4),
           decoration: BoxDecoration(
@@ -104,8 +151,7 @@ abstract class MatchStatusBaseState<T extends MatchStatusBase> extends State<T> 
             color: match.id == "" ? Colors.grey[200] : Colors.lightGreen[200],
           ),
           child: Center(
-            child: match.id == ""
-                ? Text("코트 $courtNum\n(비어 있음)", textAlign: TextAlign.center)
+            child: match.id == "" ? Text("코트 $courtNum\n(비어 있음)", textAlign: TextAlign.center)
                 : Text("${match.team1.id}\nvs\n${match.team2.id}", textAlign: TextAlign.center),
           ),
         );

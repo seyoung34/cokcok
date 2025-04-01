@@ -7,6 +7,19 @@ class FirestoreService {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
 
 
+  // ✅ 실시간 경기 정보 스트림
+  Stream<List<Match>> watchAllMatches() {
+    return _db
+        .collectionGroup('경기') // 🔹 "남성/여성/혼성" 하위 모든 경기 컬렉션 포함
+        .snapshots()
+        .map((snapshot) {
+      return snapshot.docs.map((doc) {
+        final data = doc.data();
+        return Match.fromJson(data as Map<String, dynamic>);
+      }).toList();
+    });
+  }
+
   //참가자 불러오기
   Future<List<Player>> loadPlayer() async{
     List<Player> playerList = [];

@@ -28,13 +28,16 @@ abstract class MatchTableBaseState<T extends MatchTableBase> extends State<T> {
     _loadMatchData();
   }
 
-  final ScrollController _scrollController = ScrollController();
+  final ScrollController _verticalController = ScrollController();
+  final ScrollController _horizontalController = ScrollController();
 
   @override
   void dispose() {
-    _scrollController.dispose();
+    _verticalController.dispose();
+    _horizontalController.dispose();
     super.dispose();
   }
+
 
 
   Future<void> _loadMatchData() async {
@@ -141,57 +144,67 @@ abstract class MatchTableBaseState<T extends MatchTableBase> extends State<T> {
     }
 
     return Scrollbar(
-      controller: _scrollController,
+      controller: _verticalController,
       thumbVisibility: true,
       interactive: true,
       child: SingleChildScrollView(
-        controller: _scrollController,
-        scrollDirection: Axis.horizontal,
-        child: DataTable(
-          columns: [
-            const DataColumn(label: Text("팀명")),
-            ...teams.map((t) => DataColumn(label: Text(t.id))).toList(),
-            const DataColumn(label: Text("순위")),
-            const DataColumn(label: Text("승점")),
-            const DataColumn(label: Text("득실"))
-          ],
-          rows: teams.map((rowTeam) {
-            return DataRow(
-              cells: [
-                DataCell(Text(rowTeam.id)),
-                ...teams.map((colTeam) {
-                  if (rowTeam.id == colTeam.id) return const DataCell(SizedBox());
-
-                  final match = matches.firstWhere(
-                        (m) => (m.team1.id == rowTeam.id && m.team2.id == colTeam.id) ||
-                        (m.team2.id == rowTeam.id && m.team1.id == colTeam.id),
-                    orElse: () => Match(id: '', team1: rowTeam, team2: colTeam, division: rowTeam.division),
-                  );
-
-                  if (match.isCompleted) {
-                    final score = rowTeam.id == match.team2.id
-                        ? "${match.team2Score} - ${match.team1Score}"
-                        : "${match.team1Score} - ${match.team2Score}";
-
-                    return DataCell(Center(child: Text(score)));
-                  }
-
-                  // 🛑 사용자 버전이면 연필 아이콘도 안 보임
-                  if (!widget.isAdmin) return const DataCell(SizedBox());
-
-                  return DataCell(
-                    InkWell(
-                      onTap: () => _showScoreDialog(match, gender),
-                      child: const Icon(Icons.edit, size: 16),
-                    ),
-                  );
-                }).toList(),
-                DataCell(Text("${teamStats[rowTeam.id]!["rank"]}")),
-                DataCell(Text("${teamStats[rowTeam.id]!["wins"]}")),
-                DataCell(Text("${teamStats[rowTeam.id]!["diff"]}")),
+        controller: _verticalController,
+        scrollDirection: Axis.vertical,
+        child: Scrollbar(
+          controller: _horizontalController,
+          thumbVisibility: true,
+          interactive: true,
+          // notificationPredicate: (_) => false,
+          child: SingleChildScrollView(
+            controller: _horizontalController,
+            scrollDirection: Axis.horizontal,
+            child: DataTable(
+              columns: [
+                const DataColumn(label: Text("팀명")),
+                ...teams.map((t) => DataColumn(label: Text(t.id))).toList(),
+                const DataColumn(label: Text("순위")),
+                const DataColumn(label: Text("승점")),
+                const DataColumn(label: Text("득실"))
               ],
-            );
-          }).toList(),
+              rows: teams.map((rowTeam) {
+                return DataRow(
+                  cells: [
+                    DataCell(Text(rowTeam.id)),
+                    ...teams.map((colTeam) {
+                      if (rowTeam.id == colTeam.id) return const DataCell(SizedBox());
+
+                      final match = matches.firstWhere(
+                            (m) => (m.team1.id == rowTeam.id && m.team2.id == colTeam.id) ||
+                            (m.team2.id == rowTeam.id && m.team1.id == colTeam.id),
+                        orElse: () => Match(id: '', team1: rowTeam, team2: colTeam, division: rowTeam.division),
+                      );
+
+                      if (match.isCompleted) {
+                        final score = rowTeam.id == match.team2.id
+                            ? "${match.team2Score} - ${match.team1Score}"
+                            : "${match.team1Score} - ${match.team2Score}";
+
+                        return DataCell(Center(child: Text(score)));
+                      }
+
+                      // 사용자 버전이면 연필 아이콘도 안 보임
+                      if (!widget.isAdmin) return const DataCell(SizedBox());
+
+                      return DataCell(
+                        InkWell(
+                          onTap: () => _showScoreDialog(match, gender),
+                          child: const Icon(Icons.edit, size: 16),
+                        ),
+                      );
+                    }).toList(),
+                    DataCell(Text("${teamStats[rowTeam.id]!["rank"]}")),
+                    DataCell(Text("${teamStats[rowTeam.id]!["wins"]}")),
+                    DataCell(Text("${teamStats[rowTeam.id]!["diff"]}")),
+                  ],
+                );
+              }).toList(),
+            ),
+          ),
         ),
       ),
     );
@@ -207,5 +220,51 @@ abstract class MatchTableBaseState<T extends MatchTableBase> extends State<T> {
   }
 
   @override
-  Widget build(BuildContext context);
+  Widget build(BuildContext context) {
+    return StreamBuilder<List<Match>>(
+      stream: _firestoreService.watchAllMatches(),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
+
+        final matches = snapshot.data!;
+        final matchTable = <String, List<Match>>{};
+
+        for (var match in matches) {
+          final key = "${match.team1.players[0].gender}_${match.division}";
+          matchTable.putIfAbsent(key, () => []).add(match);
+        }
+
+        final tableKeys = matchTable.keys.toList()..sort();
+        selectedTableKey ??= tableKeys.isNotEmpty ? tableKeys.first : null;
+
+        return Column(
+          children: [
+            Wrap(
+              alignment: WrapAlignment.center,
+              spacing: 12,
+              children: tableKeys.map((category) {
+                return Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Radio<String?>(
+                      value: category,
+                      groupValue: selectedTableKey,
+                      onChanged: (value) => setState(() => selectedTableKey = value),
+                      toggleable: true,
+                    ),
+                    Text(category),
+                  ],
+                );
+              }).toList(),
+            ),
+            if (selectedTableKey != null)
+              Expanded(
+                child: buildMatchTable(matchTable[selectedTableKey!] ?? []),
+              ),
+          ],
+        );
+      },
+    );
+  }
+
 }
