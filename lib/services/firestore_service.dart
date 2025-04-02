@@ -20,6 +20,18 @@ class FirestoreService {
     });
   }
 
+  Future<void> deleteCollection(String category) async {
+    final snapshot = await _db.collection(category).get();
+    final batch = FirebaseFirestore.instance.batch();
+
+    for (var doc in snapshot.docs) {
+      batch.delete(doc.reference);
+    }
+
+    await batch.commit();
+
+  }
+
   //참가자 불러오기
   Future<List<Player>> loadPlayer() async{
     List<Player> playerList = [];
@@ -96,19 +108,25 @@ class FirestoreService {
   Future<void> saveMatches(Map<String, List<Match>> matchTable, String tournamentId) async {
     print("saveMatches 시작 : ${DateTime.now()}");
     final batch = _db.batch();
-    for (var entry in matchTable.entries) {
-      String category = entry.key.split('_')[0];  //남성,여성,혼성
-      String division = entry.key.split('_')[1];  //1,2,3.....
 
-      // division 문서에 메타 정보 작성
+    for (var entry in matchTable.entries) {
+      final keyParts = entry.key.split('_'); // ex) 남성_1, 남성_1_A
+
+      final category = keyParts[0];      // 남성 / 여성 / 혼성
+      final division = keyParts[1];      // 1
+      final group = keyParts.length == 3 ? keyParts[2] : null; // A or B or null
+
+      final docId = group == null ? division : "${division}_$group"; // ex) 1_A
+      final docName = group == null ? "$category ${division}부" : "$category ${division}_${group}조";
+
       final divisionDoc = _db
           .collection('경기 기록')
-          .doc(tournamentId)  //콕콕 리그전
-          .collection(category) //남성, 여성, 혼성
-          .doc(division); //1,2.3...
+          .doc(tournamentId)
+          .collection(category)
+          .doc(docId);
 
       batch.set(divisionDoc, {
-        'name': "$category $division 부",
+        'name': docName,
         'createdAt': FieldValue.serverTimestamp(),
         'tournamentId': tournamentId,
       });
@@ -119,10 +137,10 @@ class FirestoreService {
       }
     }
 
-    // ✅ 한 번에 커밋
     await batch.commit();
     print("saveMatches 종료 : ${DateTime.now()}");
   }
+
 
   //경기 데이터 불러오기
   // Future<Map<String, List<Match>>> loadMatches({String gender = " "}) async {
@@ -223,19 +241,19 @@ class FirestoreService {
         .collection('경기 기록')
         .doc(tournamentId)
         .collection(gender) //남성,여성,혼성
-        .doc(match.division.toString())
+        .doc(match.division)
         .collection('경기')
         .doc(match.id)
         .update(match.toJson());
   }
 
 
-  Future<void> updateMatchCourt(String matchId, int courtNumber, String gender, int division) async {
+  Future<void> updateMatchCourt(String matchId, int courtNumber, String gender, String division) async {
     await _db
         .collection("경기 기록")
         .doc("콕콕 리그전")
         .collection(gender)
-        .doc(division.toString())
+        .doc(division)
         .collection("경기")
         .doc(matchId)
         .update({'courtNumber': courtNumber});

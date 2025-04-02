@@ -39,7 +39,7 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  bool isAdmin = false;
+  bool isAdmin = true;
   int selectedIndex = 3;
 
   void _showAdminDialog() {
@@ -51,7 +51,7 @@ class _HomePageState extends State<HomePage> {
         title: const Text("운영자 모드 진입"),
         content: TextField(
           controller: passwordController,
-          obscureText: true,
+          obscureText: false,
           decoration: const InputDecoration(labelText: "비밀번호 입력"),
         ),
         actions: [
