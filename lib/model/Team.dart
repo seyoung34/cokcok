@@ -5,11 +5,13 @@ class Team {
   final String id;
   final List<Player> players;
   final int division;
+  String? group;
 
   Team({
     required this.id,
     required this.players,
     required this.division,
+    this.group
   });
 
   factory Team.empty() {
@@ -29,6 +31,7 @@ class Team {
           ?.map((p) => Player.fromJson(p))
           .toList() ?? [],
       division: json['division'] ?? 0,
+      group: json['group']
     );
   }
 

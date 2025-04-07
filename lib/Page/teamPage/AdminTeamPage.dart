@@ -14,6 +14,7 @@ class AdminTeamPage extends TeamPageBase {
 class _AdminTeamPageState extends TeamPageBaseState<AdminTeamPage> {
   final FirestoreService _firestoreService = FirestoreService();
 
+  //note build
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -206,7 +207,7 @@ class _AdminTeamPageState extends TeamPageBaseState<AdminTeamPage> {
 
         for (int i = 0; i < minLength; i++) {
           result.add(Team(
-            id: "혼성$division-${i + 1}",
+            id: "$division-${i + 1}_${femaleList[i].name}-${maleList[maleList.length - i - 1].name}",
             players: [femaleList[i], maleList[i]],
             division: division,
           ));

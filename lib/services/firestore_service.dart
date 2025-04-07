@@ -8,7 +8,7 @@ class FirestoreService {
 
 
   // ✅ 실시간 경기 정보 스트림
-  Stream<List<Match>> watchAllMatches() {
+  /*Stream<List<Match>> watchAllMatches() {
     return _db
         .collectionGroup('경기') // 🔹 "남성/여성/혼성" 하위 모든 경기 컬렉션 포함
         .snapshots()
@@ -18,7 +18,41 @@ class FirestoreService {
         return Match.fromJson(data as Map<String, dynamic>);
       }).toList();
     });
+  }*/
+
+  Stream<List<Match>> watchAllMatches() {
+    return _db
+        .collectionGroup('경기')
+        .snapshots()
+        .map((snapshot) {
+      return snapshot.docs.map((doc) {
+        final data = doc.data();
+        final match = Match.fromJson(data as Map<String, dynamic>);
+
+        // ✅ 본선 경기는 제외 (group이 "본선_"으로 시작하거나, division이 본선_인 경우)
+        if (match.group?.startsWith("본선") == true || match.division.toString().startsWith("본선")) {
+          return null; // 제외
+        }
+
+        return match;
+      }).whereType<Match>().toList(); // null 제거
+    });
   }
+
+  /// 본선 경기 존재 여부 확인
+  Future<bool> hasFinalMatches(String tournamentId, String gender, int division) async {
+    final snapshot = await _db
+        .collection('경기 기록')
+        .doc(tournamentId)
+        .collection(gender)
+        .doc(division.toString())
+        .collection('경기')
+        .where("group", whereIn: ["본선_준결승", "본선_결승", "본선_3·4위"])
+        .get();
+
+    return snapshot.docs.isNotEmpty;
+  }
+
 
   Future<void> deleteCollection(String category) async {
     final snapshot = await _db.collection(category).get();
@@ -50,14 +84,25 @@ class FirestoreService {
   // 🔹 팀 저장
   Future<void> saveTeams(List<Team> teams, String category) async {
     final batch = _db.batch();
-    CollectionReference teamsRef = _db.collection(category);
+    final teamsRef = _db.collection(category);
 
+    // 1. 기존 문서 전체 가져오기
+    final existingDocs = await teamsRef.get();
+
+    // 2. 기존 문서 삭제
+    for (var doc in existingDocs.docs) {
+      batch.delete(doc.reference);
+    }
+
+    // 3. 새 팀 정보 저장
     for (var team in teams) {
       batch.set(teamsRef.doc(team.id), team.toJson());
     }
 
+    // 4. 커밋
     await batch.commit();
   }
+
 
   // 🔹 팀 불러오기
   Future<List<Team>> loadTeams(String category) async {
@@ -209,6 +254,7 @@ class FirestoreService {
       await Future.wait(futures);
     }
 
+    print("matchTable Key : ${matchTable.keys.toString()}");
     return matchTable;
   }
 
@@ -237,23 +283,48 @@ class FirestoreService {
 
   Future<void> updateMatch({ required String tournamentId, required Match match, required String gender}) async {
     print(tournamentId + match.id.toString() + gender);
+    String group = match.group != null ? "_${match.group}" : "";
     await _db
         .collection('경기 기록')
         .doc(tournamentId)
         .collection(gender) //남성,여성,혼성
-        .doc(match.division)
+        .doc(match.division.toString()+group) //1_A
         .collection('경기')
         .doc(match.id)
         .update(match.toJson());
   }
 
+  Future<void> saveTournamentMatches({
+    required String tournamentId,
+    required String gender,
+    required int division,
+    required List<Match> matches,
+  }) async {
+    final baseRef = _db
+        .collection("경기 기록")
+        .doc(tournamentId)  //콕콕 리그전
+        .collection(gender) //남성
+        .doc("본선_$division")
+        .collection("경기");
 
-  Future<void> updateMatchCourt(String matchId, int courtNumber, String gender, String division) async {
+    final batch = _db.batch();
+
+    for (var match in matches) {
+      batch.set(baseRef.doc(match.id), match.toJson());
+      print("match.toJson : ${match.toJson()}");
+    }
+
+    await batch.commit();
+  }
+
+
+
+  Future<void> updateMatchCourt(String matchId, int courtNumber, String gender, int division) async {
     await _db
         .collection("경기 기록")
         .doc("콕콕 리그전")
         .collection(gender)
-        .doc(division)
+        .doc(division.toString())
         .collection("경기")
         .doc(matchId)
         .update({'courtNumber': courtNumber});

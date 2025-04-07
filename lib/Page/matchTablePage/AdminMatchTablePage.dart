@@ -56,17 +56,18 @@ class _AdminMatchTablePageState extends MatchTableBaseState<AdminMatchTablePage>
                       orElse: () => Match(id: '', team1: rowTeam, team2: colTeam, division: rowTeam.division),
                     );
 
-                    if (match.isCompleted) {
-                      final score = rowTeam.id == match.team2.id
-                          ? "${match.team2Score} - ${match.team1Score}"
-                          : "${match.team1Score} - ${match.team2Score}";
-                      return DataCell(Center(child: Text(score)));
-                    }
+                    final score = match.isCompleted
+                        ? (rowTeam.id == match.team2.id
+                        ? "${match.team2Score} - ${match.team1Score}"
+                        : "${match.team1Score} - ${match.team2Score}")
+                        : null;
 
                     return DataCell(
                       InkWell(
                         onTap: () => showScoreDialog(match, gender),
-                        child: const Icon(Icons.edit, size: 16),
+                        child: score != null
+                            ? Text(score)
+                            : const Icon(Icons.edit, size: 16),
                       ),
                     );
                   }),

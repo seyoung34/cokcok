@@ -5,6 +5,7 @@ class Match {
   final Team team1;
   final Team team2;
   final int division;
+  String? group;
   int team1Score;
   int team2Score;
   bool isCompleted;
@@ -15,6 +16,7 @@ class Match {
     required this.team1,
     required this.team2,
     required this.division,
+    this.group,
     this.team1Score = 0,
     this.team2Score = 0,
     this.isCompleted = false,
@@ -30,6 +32,7 @@ class Match {
     'team2Score': team2Score,
     'isCompleted': isCompleted,
     'courtNumber': courtNumber,
+    'group':group
   };
 
   static Match fromJson(Map<String, dynamic> json) => Match(
@@ -41,6 +44,7 @@ class Match {
     team2Score: json['team2Score'] ?? 0,
     isCompleted: json['isCompleted'] ?? false,
     courtNumber: json['courtNumber'], // null 가능
+    group: json['group']
   );
 }
 

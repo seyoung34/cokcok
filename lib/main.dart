@@ -40,7 +40,7 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   bool isAdmin = true;
-  int selectedIndex = 3;
+  int selectedIndex = 2;
 
   void _showAdminDialog() {
     final TextEditingController passwordController = TextEditingController();
