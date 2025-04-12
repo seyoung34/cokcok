@@ -6,11 +6,87 @@ import '../model/Match.dart';
 class FirestoreService {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
 
-
-  // ✅ 실시간 경기 정보 스트림
-  /*Stream<List<Match>> watchAllMatches() {
+  /// 본선 경기 실시간 스트림
+  Stream<List<Match>> watchFinalMatches({
+    required String tournamentId,
+    required String gender,
+    required int division,
+  }) {
     return _db
-        .collectionGroup('경기') // 🔹 "남성/여성/혼성" 하위 모든 경기 컬렉션 포함
+        .collection("본선 경기")
+        .doc(tournamentId)
+        .collection(gender)
+        .doc(division.toString())
+        .collection("경기")
+        .snapshots()
+        .map((snapshot) {
+      return snapshot.docs.map((doc) => Match.fromJson(doc.data())).toList();
+    });
+  }
+
+
+  /// 본선 경기 저장 (준결승, 결승, 3·4위전 포함)
+  Future<void> saveFinalMatches({
+    required String tournamentId,
+    required String gender,
+    required int division,
+    required List<Match> matches,
+  }) async {
+    final batch = _db.batch();
+
+    final basePath = _db
+        .collection("본선 경기")
+        .doc(tournamentId)
+        .collection(gender)
+        .doc(division.toString())
+        .collection("경기");
+
+    for (var match in matches) {
+      final doc = basePath.doc(match.id);
+      batch.set(doc, match.toJson());
+    }
+
+    await batch.commit();
+  }
+
+  /// 본선 경기 저장
+  Future<void> saveTournamentMatches({
+    required String tournamentId,
+    required String gender,
+    required int division,
+    required List<Match> matches,
+  }) async {
+    final batch = _db.batch();
+    final divisionDoc = _db
+        .collection('본선 경기')
+        .doc(tournamentId)
+        .collection(gender)
+        .doc(division.toString());
+
+    // division 메타정보
+    batch.set(divisionDoc, {
+      'name': "$gender $division 부 본선",
+      'createdAt': FieldValue.serverTimestamp(),
+      'tournamentId': tournamentId,
+    });
+
+    for (var match in matches) {
+      final matchDoc = divisionDoc.collection('경기').doc(match.id);
+      batch.set(matchDoc, match.toJson());
+    }
+
+    await batch.commit();
+  }
+
+  /// 본선 경기 실시간 조회
+  Stream<List<Match>> watchTournamentMatches(
+      String tournamentId, String gender, int division) {
+    return _db
+        .collection('본선 경기')
+        .doc(tournamentId)
+        .collection(gender)
+        .doc(division.toString())
+        .collection('경기')
         .snapshots()
         .map((snapshot) {
       return snapshot.docs.map((doc) {
@@ -18,8 +94,40 @@ class FirestoreService {
         return Match.fromJson(data as Map<String, dynamic>);
       }).toList();
     });
-  }*/
+  }
 
+
+
+  // 본선 division 목록 가져오기
+  Future<List<String>> getFinalDivisions(String gender) async {
+    final snapshot = await _db.collection("경기 기록").doc("콕콕 리그전").collection(gender).get();
+    return snapshot.docs
+        .map((doc) => doc.id)
+        .where((id) => id.startsWith("본선_"))
+        .map((id) => id.replaceAll("본선_", "")) // "1", "2" ...
+        .toList();
+  }
+
+  /// 이미 본선 경기가 존재하는지 확인
+  Future<bool> finalMatchesExist({
+    required String tournamentId,
+    required String gender,
+    required int division,
+  }) async {
+    final snapshot = await _db
+        .collection("본선 경기")
+        .doc(tournamentId)
+        .collection(gender)
+        .doc(division.toString())
+        .collection("경기")
+        .get();
+
+    return snapshot.docs.isNotEmpty;
+  }
+
+
+
+  ///예선 정보 받아오기
   Stream<List<Match>> watchAllMatches() {
     return _db
         .collectionGroup('경기')
@@ -147,6 +255,33 @@ class FirestoreService {
     }).toList();
 
   }
+
+  //경기 기록 삭제하기
+  Future<void> deletePreliminaryMatches(String tournamentId) async {
+    final root = _db.collection('경기 기록').doc(tournamentId);
+    final categories = ["남성", "여성", "혼성"];
+
+    for (final category in categories) {
+      final categoryRef = root.collection(category);
+      final divisionDocs = await categoryRef.get();
+
+      for (final divisionDoc in divisionDocs.docs) {
+        final divisionId = divisionDoc.id;
+        // if (divisionId.startsWith("본선")) continue; // 본선 데이터는 건드리지 않음
+
+        final matchRef = categoryRef.doc(divisionId).collection("경기");
+        final matchDocs = await matchRef.get();
+
+        for (final match in matchDocs.docs) {
+          await match.reference.delete();
+        }
+
+        // ⚠️ division 문서도 삭제 (필요하다면)
+        await divisionDoc.reference.delete();
+      }
+    }
+  }
+
 
 
   //최초 모든 경기 데이터 저장하기
@@ -293,30 +428,6 @@ class FirestoreService {
         .doc(match.id)
         .update(match.toJson());
   }
-
-  Future<void> saveTournamentMatches({
-    required String tournamentId,
-    required String gender,
-    required int division,
-    required List<Match> matches,
-  }) async {
-    final baseRef = _db
-        .collection("경기 기록")
-        .doc(tournamentId)  //콕콕 리그전
-        .collection(gender) //남성
-        .doc("본선_$division")
-        .collection("경기");
-
-    final batch = _db.batch();
-
-    for (var match in matches) {
-      batch.set(baseRef.doc(match.id), match.toJson());
-      print("match.toJson : ${match.toJson()}");
-    }
-
-    await batch.commit();
-  }
-
 
 
   Future<void> updateMatchCourt(String matchId, int courtNumber, String gender, int division) async {

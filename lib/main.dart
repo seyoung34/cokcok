@@ -1,3 +1,5 @@
+import 'package:cokcok/Page/MatchTournament/AdminMatchTournamentPage.dart';
+import 'package:cokcok/Page/MatchTournament/UserMatchTournamentPage.dart';
 import 'package:cokcok/Page/matchStatusPage/AdminMatchStatusPage.dart';
 import 'package:cokcok/Page/matchStatusPage/UserMatchStatusPage.dart';
 import 'package:cokcok/Page/matchTablePage/AdminMatchTablePage.dart';
@@ -24,7 +26,8 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      theme: ThemeData(scaffoldBackgroundColor: Colors.grey.shade50, fontFamily: 'BMJUA'),
+      theme: ThemeData(
+          scaffoldBackgroundColor: Colors.grey.shade200, fontFamily: 'BMJUA'),
       debugShowCheckedModeBanner: false,
       home: const HomePage(),
     );
@@ -82,27 +85,36 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     // 페이지 리스트 구성
     final pages = isAdmin
-        ? [const AdminPlayerPage(), const AdminTeamPage(), const AdminMatchTablePage(tournamentId: "콕콕 리그전"), const AdminMatchStatusPage()]
-        : [UserPlayerPage(onAdminRequest: _showAdminDialog), const UserTeamPage(), const UserMatchTablePage(tournamentId: "콕콕 리그전"), const UserMatchStatusPage()];
+        ? [
+            const AdminPlayerPage(),
+            const AdminTeamPage(),
+            const AdminMatchTablePage(tournamentId: "콕콕 리그전"),
+            const AdminMatchTournamentPage(tournamentId: "콕콕 리그전",gender: "남성",),
+            const AdminMatchStatusPage(),
+          ]
+        : [
+            UserPlayerPage(onAdminRequest: _showAdminDialog),
+            const UserTeamPage(),
+            const UserMatchTablePage(tournamentId: "콕콕 리그전"),
+            const UserMatchTournamentPage(tournamentId: "콕콕 리그전",gender: "남성",),
+            const UserMatchStatusPage(),
+          ];
 
     return Scaffold(
-      // AppBar는 각 페이지 내부에서 처리
-      body: pages[selectedIndex],
-      bottomNavigationBar:
-        Container(
+        // AppBar는 각 페이지 내부에서 처리
+        body: pages[selectedIndex],
+        bottomNavigationBar: Container(
           decoration: BoxDecoration(
-            border: Border(top: BorderSide(color: Colors.grey.shade300, width: 1)),
-            borderRadius: BorderRadius.only(
-              topLeft: Radius.circular(20),
-              topRight: Radius.circular(20)
-          )
-          ),
+              border: Border(
+                  top: BorderSide(color: Colors.grey.shade300, width: 1)),
+              borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(20), topRight: Radius.circular(20))),
           child: ClipRRect(
             borderRadius: const BorderRadius.only(
               topLeft: Radius.circular(20),
               topRight: Radius.circular(20),
-              ),
-            child :BottomNavigationBar(
+            ),
+            child: BottomNavigationBar(
               type: BottomNavigationBarType.fixed,
               backgroundColor: Colors.yellow.shade100,
               fixedColor: Colors.green.shade500,
@@ -110,13 +122,19 @@ class _HomePageState extends State<HomePage> {
               onTap: (index) => setState(() => selectedIndex = index),
               items: const [
                 BottomNavigationBarItem(icon: Icon(Icons.people), label: '참가자'),
-                BottomNavigationBarItem(icon: Icon(Icons.groups), label: '팀 구성'),
-                BottomNavigationBarItem(icon: Icon(Icons.sports_tennis), label: '점수표'),
-                BottomNavigationBarItem(icon: Icon(Icons.personal_video), label: '진행 상황'),
+                BottomNavigationBarItem(
+                    icon: Icon(Icons.groups), label: '팀 구성'),
+                BottomNavigationBarItem(
+                    icon: Icon(Icons.sports_tennis), label: '예선 점수표'),
+                BottomNavigationBarItem(
+                  icon: Icon(Icons.emoji_events),
+                  label: '본선 토너먼트',
+                ),
+                BottomNavigationBarItem(
+                    icon: Icon(Icons.personal_video), label: '상황판'),
               ],
+            ),
           ),
-
-              ),
         ));
   }
 }

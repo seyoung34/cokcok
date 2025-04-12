@@ -195,6 +195,14 @@ packages:
     description: flutter
     source: sdk
     version: "0.0.0"
+  flutter_tournament_bracket:
+    dependency: "direct main"
+    description:
+      name: flutter_tournament_bracket
+      sha256: "83a173916c33bbe2e87d1b6150e417495dee355547f95b0ffb96344ede17abec"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.0.5"
   flutter_web_plugins:
     dependency: transitive
     description: flutter
