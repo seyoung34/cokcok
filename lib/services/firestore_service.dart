@@ -6,6 +6,104 @@ import '../model/Match.dart';
 class FirestoreService {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
 
+  /// 본선 경기 단발성 불러오기 (ex: 남성 1부)
+  Future<List<Match>> loadTournamentMatches({
+    required String tournamentId,
+    required String gender,
+    required int division,
+  }) async {
+    final snapshot = await _db
+        .collection("본선 경기")
+        .doc(tournamentId)
+        .collection(gender)
+        .doc("본선_$division")
+        .collection("경기")
+        .get();
+
+    return snapshot.docs.map((doc) => Match.fromJson(doc.data())).toList();
+  }
+
+
+  /// 본선 경기 실시간 수신 (ex: "남성_1")
+  Stream<List<Match>> watchTournamentMatchesByDivision(String divisionKey) {
+    final parts = divisionKey.split('_');
+    final gender = parts[0];
+    final division = int.tryParse(parts[1]) ?? 1;
+
+    return _db
+        .collection("본선 경기")
+        .doc("콕콕 리그전")
+        .collection(gender)
+        .doc("본선_$division")
+        .collection("경기")
+        .snapshots()
+        .map((snapshot) =>
+        snapshot.docs.map((doc) => Match.fromJson(doc.data())).toList());
+  }
+
+
+  Future<bool> isDivisionCompleted(String gender, int division) async {
+    final doc = await _db.collection('부').doc("${gender}_$division").get();
+    return doc.exists && (doc.data()?['isCompleted'] == true);
+  }
+
+  Future<bool> hasFinalMatches(String tournamentId, String gender, int division) async {
+    final snapshot = await _db
+        .collection('본선 경기')
+        .doc(tournamentId)
+        .collection(gender)
+        .doc('본선_$division')
+        .collection('경기')
+        .get();
+
+    return snapshot.docs.isNotEmpty;
+  }
+
+
+  ///본선경기 업데이트
+  Future<void> updateTournamentMatch({
+    required String tournamentId,
+    required String gender,
+    required int division,
+    required Match match,
+  }) async {
+    final docRef = _db
+        .collection('본선 경기')
+        .doc(tournamentId)
+        .collection(gender)
+        .doc(division.toString())
+        .collection('경기')
+        .doc(match.id);
+
+    await docRef.set(match.toJson());
+  }
+
+
+  /// 특정 그룹(성별, division, group)의 경기 완료 여부 갱신
+  Future<void> updateGroupCompletionStatus({
+    required String tournamentId,
+    required String gender, // 남성, 여성, 혼성
+    required int division,
+    String? group,          // A, B, 또는 null
+  }) async {
+    final groupKey = group != null ? "_$group" : "";
+    final groupDoc = _db
+        .collection('경기 기록')
+        .doc(tournamentId)
+        .collection(gender)
+        .doc('$division$groupKey');
+
+    final matchSnapshot = await groupDoc.collection('경기').get();
+
+    final allCompleted = matchSnapshot.docs.every((doc) {
+      final data = doc.data();
+      return data['isCompleted'] == true;
+    });
+
+    await groupDoc.set({'isCompleted': allCompleted}, SetOptions(merge: true));
+    print("일단 실행..");
+  }
+
   /// 본선 경기 실시간 스트림
   Stream<List<Match>> watchFinalMatches({
     required String tournamentId,
@@ -145,20 +243,6 @@ class FirestoreService {
         return match;
       }).whereType<Match>().toList(); // null 제거
     });
-  }
-
-  /// 본선 경기 존재 여부 확인
-  Future<bool> hasFinalMatches(String tournamentId, String gender, int division) async {
-    final snapshot = await _db
-        .collection('경기 기록')
-        .doc(tournamentId)
-        .collection(gender)
-        .doc(division.toString())
-        .collection('경기')
-        .where("group", whereIn: ["본선_준결승", "본선_결승", "본선_3·4위"])
-        .get();
-
-    return snapshot.docs.isNotEmpty;
   }
 
 

@@ -51,7 +51,6 @@ abstract class MatchTableBaseState<T extends MatchTableBase> extends State<T> {
 
           // ⚡ 혼성인지 판단
           final isMixed = p1Gender != p2Gender;
-          if(isMixed) print("혼성!");
           final category = isMixed ? "혼성" : p1Gender;
 
 
@@ -126,19 +125,6 @@ abstract class MatchTableBaseState<T extends MatchTableBase> extends State<T> {
                     label: const Text("리그전 새로 시작"),
                     backgroundColor: Colors.white,
                   ),
-                  const SizedBox(height: 12),
-                  if (canShowFinal)
-                    FloatingActionButton.extended(
-                      onPressed: () async {
-                        if (selectedTableKey == null) return;
-                        final gender = selectedTableKey!.split("_")[0];
-                        final division = int.tryParse(selectedTableKey!.split("_")[1]) ?? 1;
-                        await generateFinalMatches(gender, division, widget.tournamentId);
-                      },
-                      icon: const Icon(Icons.emoji_events),
-                      label: const Text("본선 시작"),
-                      backgroundColor: Colors.white,
-                    ),
                 ],
               );
             },
@@ -188,81 +174,6 @@ abstract class MatchTableBaseState<T extends MatchTableBase> extends State<T> {
 
     return allCompletedA && allCompletedB;
   }
-
-
-  //본선 생성
-  Future<void> generateFinalMatches(String gender, int division, String tournamentId) async { //남성 1
-
-    // 🔒 중복 생성 방지
-    final alreadyExists = await _firestoreService.hasFinalMatches(tournamentId, gender, division);
-    if (alreadyExists) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("이미 본선 경기가 생성되었습니다.")),
-      );
-      return;
-    }
-
-    final matchMap = await _firestoreService.loadMatches();
-    final groupAKey = "${gender}_${division}_A";
-    final groupBKey = "${gender}_${division}_B";
-
-    final aMatches = matchMap[groupAKey] ?? [];
-    final bMatches = matchMap[groupBKey] ?? [];
-
-    final aTeams = getUniqueTeams(aMatches);
-    final bTeams = getUniqueTeams(bMatches);
-
-    final aStats = calculateStats(aMatches, aTeams);
-    final bStats = calculateStats(bMatches, bTeams);
-
-
-    final aSorted = [...aTeams]..sort((a, b) => aStats[a.id]!['rank'].compareTo(aStats[b.id]!['rank']));
-    final bSorted = [...bTeams]..sort((a, b) => bStats[a.id]!['rank'].compareTo(bStats[b.id]!['rank']));
-
-    final semi1 = Match(
-      id: "${aSorted[0].id} VS ${bSorted[1].id}",
-      team1: aSorted[0],
-      team2: bSorted[1],
-      division: division,
-      group: "본선_준결승",
-    );
-
-    final semi2 = Match(
-      id: "${bSorted[0].id} VS ${aSorted[1].id}",
-      team1: bSorted[0],
-      team2: aSorted[1],
-      division: division,
-      group: "본선_준결승",
-    );
-
-    final finalMatch = Match(
-      id: "결승",
-      team1: Team.empty(),
-      team2: Team.empty(),
-      division: division,
-      group: "본선_결승",
-    );
-
-    final thirdMatch = Match(
-      id: "3·4위전",
-      team1: Team.empty(),
-      team2: Team.empty(),
-      division: division,
-      group: "본선_3·4위",
-    );
-
-    await _firestoreService.saveTournamentMatches(
-      tournamentId: tournamentId,
-      gender: gender,
-      division: division,
-      matches: [semi1, semi2],
-    );
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("본선 경기가 생성되었습니다.")),
-    );
-  }
-
 
 
   ///리그전 새로 시작
@@ -493,6 +404,13 @@ abstract class MatchTableBaseState<T extends MatchTableBase> extends State<T> {
       tournamentId: widget.tournamentId,
       match: match,
       gender: gender,
+    );
+    // 경기 완료 상태 갱신
+    await _firestoreService.updateGroupCompletionStatus(
+      tournamentId: widget.tournamentId,
+      gender: gender,
+      division: match.division,
+      group: match.group, // null일 수도 있음
     );
   }
 

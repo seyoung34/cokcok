@@ -9,7 +9,8 @@ class Match {
   int team1Score;
   int team2Score;
   bool isCompleted;
-  int? courtNumber; // 새로 추가됨
+  int? courtNumber;
+  String? winnerTeamId;
 
   Match({
     required this.id,
@@ -21,6 +22,7 @@ class Match {
     this.team2Score = 0,
     this.isCompleted = false,
     this.courtNumber,
+    this.winnerTeamId,
   });
 
   Map<String, dynamic> toJson() => {
@@ -32,7 +34,8 @@ class Match {
     'team2Score': team2Score,
     'isCompleted': isCompleted,
     'courtNumber': courtNumber,
-    'group':group
+    'group':group,
+    'winnerTeamId': winnerTeamId
   };
 
   static Match fromJson(Map<String, dynamic> json) => Match(
@@ -44,8 +47,20 @@ class Match {
     team2Score: json['team2Score'] ?? 0,
     isCompleted: json['isCompleted'] ?? false,
     courtNumber: json['courtNumber'], // null 가능
-    group: json['group']
+    group: json['group'],
+    winnerTeamId: json['winnerTeamId'],
   );
+
+  factory Match.empty() {
+    return Match(
+      id: "",
+      team1: Team.empty(),
+      team2: Team.empty(),
+      division: 0,
+      group: "",
+    );
+  }
+
 }
 
 

@@ -89,14 +89,14 @@ class _HomePageState extends State<HomePage> {
             const AdminPlayerPage(),
             const AdminTeamPage(),
             const AdminMatchTablePage(tournamentId: "콕콕 리그전"),
-            const AdminMatchTournamentPage(tournamentId: "콕콕 리그전",gender: "남성",),
+            const AdminMatchTournamentPage(tournamentId: "콕콕 리그전"),
             const AdminMatchStatusPage(),
           ]
         : [
             UserPlayerPage(onAdminRequest: _showAdminDialog),
             const UserTeamPage(),
             const UserMatchTablePage(tournamentId: "콕콕 리그전"),
-            const UserMatchTournamentPage(tournamentId: "콕콕 리그전",gender: "남성",),
+            const UserMatchTournamentPage(tournamentId: "콕콕 리그전"),
             const UserMatchStatusPage(),
           ];
 
