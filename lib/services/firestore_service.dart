@@ -16,7 +16,7 @@ class FirestoreService {
         .collection("본선 경기")
         .doc(tournamentId)
         .collection(gender)
-        .doc("본선_$division")
+        .doc(division.toString())
         .collection("경기")
         .get();
 
@@ -27,14 +27,14 @@ class FirestoreService {
   /// 본선 경기 실시간 수신 (ex: "남성_1")
   Stream<List<Match>> watchTournamentMatchesByDivision(String divisionKey) {
     final parts = divisionKey.split('_');
-    final gender = parts[0];
-    final division = int.tryParse(parts[1]) ?? 1;
+    final gender = parts[0];  ///남성, 여성, 혼성
+    final division = int.tryParse(parts[1]) ?? 1; /// 1, 2....
 
     return _db
         .collection("본선 경기")
         .doc("콕콕 리그전")
         .collection(gender)
-        .doc("본선_$division")
+        .doc(division.toString())
         .collection("경기")
         .snapshots()
         .map((snapshot) =>
@@ -52,7 +52,7 @@ class FirestoreService {
         .collection('본선 경기')
         .doc(tournamentId)
         .collection(gender)
-        .doc('본선_$division')
+        .doc(division.toString())
         .collection('경기')
         .get();
 
