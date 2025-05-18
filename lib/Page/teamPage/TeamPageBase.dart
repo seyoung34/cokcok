@@ -42,6 +42,7 @@ abstract class TeamPageBaseState<T extends TeamPageBase> extends State<T> {
     maleTeams = await _firestoreService.loadTeams("남성 복식 팀");
     femaleTeams = await _firestoreService.loadTeams("여성 복식 팀");
     mixedTeams = await _firestoreService.loadTeams("혼성 복식 팀");
+
     setState(() {});
   }
 

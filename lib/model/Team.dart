@@ -2,7 +2,7 @@
 import 'Player.dart';
 
 class Team {
-  final String id;
+  String id;
   final List<Player> players;
   final int division;
   String? group;

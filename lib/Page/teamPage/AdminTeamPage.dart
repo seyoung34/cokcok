@@ -99,14 +99,29 @@ class _AdminTeamPageState extends TeamPageBaseState<AdminTeamPage> {
     switch (selectedCategory) {
       case "남성":
         collectionName = "남성 복식 팀";
+        for (int i = 0; i < maleTeams.length; i++) {
+          String idfirst = maleTeams[i].id.split("_").first;
+          String idLast = maleTeams[i].players[0].name + "-" + maleTeams[i].players[1].name;
+          maleTeams[i].id = idfirst + "_" + idLast;
+        }
         targetTeams = maleTeams;
         break;
       case "여성":
         collectionName = "여성 복식 팀";
+        for (int i = 0; i < femaleTeams.length; i++) {
+          String idfirst = femaleTeams[i].id.split("_").first;
+          String idLast = femaleTeams[i].players[0].name + "-" + femaleTeams[i].players[1].name;
+          femaleTeams[i].id = idfirst + "_" + idLast;
+        }
         targetTeams = femaleTeams;
         break;
       case "혼성":
         collectionName = "혼성 복식 팀";
+        for (int i = 0; i < mixedTeams.length; i++) {
+          String idfirst = mixedTeams[i].id.split("_").first;
+          String idLast = mixedTeams[i].players[0].name + "-" + mixedTeams[i].players[1].name;
+          mixedTeams[i].id = idfirst + "_" + idLast;
+        }
         targetTeams = mixedTeams;
         break;
       default:
@@ -337,7 +352,7 @@ class _AdminTeamPageState extends TeamPageBaseState<AdminTeamPage> {
     return result;
   }
 
-  List<Team> _createMixedTeams(List<Player> males, List<Player> females) {
+  /*List<Team> _createMixedTeams(List<Player> males, List<Player> females) {
     Map<int, List<Player>> maleGroups = {};
     Map<int, List<Player>> femaleGroups = {};
 
@@ -368,5 +383,31 @@ class _AdminTeamPageState extends TeamPageBaseState<AdminTeamPage> {
     });
 
     return result;
+  }*/
+
+  List<Team> _createMixedTeams(List<Player> males, List<Player> females) {
+    List<Player> mixedMales = males.where((p) => p.isMixed).toList();
+    List<Player> mixedFemales = females.where((p) => p.isMixed).toList();
+
+    // mixedMales.shuffle();
+    // mixedFemales.shuffle();
+
+
+    int teamCount = mixedMales.length;
+    List<Team> result = [];
+
+    for (int i = 0; i < teamCount; i++) {
+      final male = mixedMales[i];
+      final female = mixedFemales[i];
+      result.add(Team(
+        id: "혼성-${i + 1}_${female.name}-${male.name}",
+        players: [female, male],
+        division: 1, // 혼성은 division 하나만 있다고 가정
+      ));
+    }
+
+    return result;
   }
+
+
 }
