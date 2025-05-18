@@ -3,6 +3,7 @@ import '../../model/Match.dart';
 import '../../model/Team.dart';
 import '../../services/firestore_service.dart';
 
+
 abstract class MatchStatusBase extends StatefulWidget {
   final bool isAdmin;
   const MatchStatusBase({super.key, required this.isAdmin});
@@ -19,15 +20,9 @@ abstract class MatchStatusBaseState<T extends MatchStatusBase> extends State<T> 
   @override
   void initState() {
     super.initState();
-    // _loadMatches();
   }
 
-  Future<void> _loadMatches() async {
-    Map<String, List<Match>> matchMap = await _firestoreService.loadMatches();
-    allMatches = matchMap.values.expand((matchList) => matchList).toList();
-    setState(() => isLoading = false);
-  }
-
+  //매치에 코트 넘버 부여
   Future<void> _assignMatchToCourt(Match match, int courtNumber, String gender, String division) async {
     match.courtNumber = courtNumber;
     await _firestoreService.updateMatchCourt(match.id, courtNumber, gender, division);

@@ -3,6 +3,7 @@ import '../../model/Match.dart';
 import '../../model/Team.dart';
 import '../../services/firestore_service.dart';
 import 'MatchTableBase.dart';
+import 'package:material_symbols_icons/material_symbols_icons.dart';
 
 class AdminMatchTablePage extends MatchTableBase {
   const AdminMatchTablePage({super.key, required String tournamentId})
@@ -56,20 +57,35 @@ class _AdminMatchTablePageState extends MatchTableBaseState<AdminMatchTablePage>
                       orElse: () => Match(id: '', team1: rowTeam, team2: colTeam, division: rowTeam.division),
                     );
 
+                    //좌우반전 여부 스코어 설정
                     final score = match.isCompleted
                         ? (rowTeam.id == match.team2.id
                         ? "${match.team2Score} - ${match.team1Score}"
                         : "${match.team1Score} - ${match.team2Score}")
                         : null;
 
+                    //todo 게임중일 때 아이콘 변경하기
                     return DataCell(
                       InkWell(
                         onTap: () => showScoreDialog(match, gender),
-                        child: score != null
-                            ? Text(score)
-                            : const Icon(Icons.edit, size: 16),
+                        child: () {
+                          if (score != null) {
+                            return Text(score);
+                          } else if (match.courtNumber != null) {
+                            return Row(
+                              children: [
+                                getCourtIcon(match.courtNumber!), // 위에서 만든 함수 사용
+                                const SizedBox(width: 4),
+                                Text("코트 ${match.courtNumber}"),
+                              ],
+                            );
+                          } else {
+                            return const Icon(MaterialSymbols.edit, size: 18, color: Colors.grey);
+                          }
+                        }(),
                       ),
                     );
+
                   }),
                   DataCell(Text("${stats[rowTeam.id]!["rank"]}")),
                   DataCell(Text("${stats[rowTeam.id]!["wins"]}")),
@@ -82,4 +98,17 @@ class _AdminMatchTablePageState extends MatchTableBaseState<AdminMatchTablePage>
       ),
     );
   }
+
+  Icon getCourtIcon(int courtNumber) {
+    switch (courtNumber) {
+      case 1: return const Icon(MaterialSymbols.counter_1, size: 18, color: Colors.green);
+      case 2: return const Icon(MaterialSymbols.counter_2, size: 18, color: Colors.green);
+      case 3: return const Icon(MaterialSymbols.counter_3, size: 18, color: Colors.green);
+      case 4: return const Icon(MaterialSymbols.counter_4, size: 18, color: Colors.green);
+      case 5: return const Icon(MaterialSymbols.counter_5, size: 18, color: Colors.green);
+      case 6: return const Icon(MaterialSymbols.counter_6, size: 18, color: Colors.green);
+      default: return const Icon(Icons.error, size: 18, color: Colors.red); // 예외 처리
+    }
+  }
+
 }

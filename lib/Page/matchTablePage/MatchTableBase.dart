@@ -84,23 +84,24 @@ abstract class MatchTableBaseState<T extends MatchTableBase> extends State<T> {
                       return Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Radio<String?>(
-                            value: key,
-                            groupValue: selectedTableKey,
-                            onChanged: (value) =>
-                                setState(() => selectedTableKey = value),
-                            toggleable: true,
-                          ),
                           Padding(
-                            padding: const EdgeInsets.only(right: 16),
-                            child: Text(key),
+                            padding: const EdgeInsets.symmetric(horizontal: 6),
+                            child: ChoiceChip(
+                              label: Text(key),
+                              selected: selectedTableKey == key,
+                              onSelected: (selected) {
+                                setState(() {
+                                  selectedTableKey = selected ? key : null;
+                                });
+                              },
+                            ),
                           ),
                         ],
                       );
                     }).toList(),
                   ),
                 ),
-
+                SizedBox(height: 6,),
                 Container(color: Colors.grey.shade400,height: 2,),
                 SizedBox(height: 6,),
                 if (selectedTableKey != null)
