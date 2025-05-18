@@ -130,24 +130,30 @@ class _AdminTeamPageState extends TeamPageBaseState<AdminTeamPage> {
     int maleDivisions = 1;
     int femaleDivisions = 1;
 
-    await _showDivisionDialog("남성 복식", males.length, (divCount) {
-      maleDivisions = divCount;
-    });
+    // await _showDivisionDialog("남성 복식", males.length, (divCount) {
+    //   maleDivisions = divCount;
+    // });
+    //
+    // await _showDivisionDialog("여성 복식", females.length, (divCount) {
+    //   femaleDivisions = divCount;
+    // });
 
-    await _showDivisionDialog("여성 복식", females.length, (divCount) {
-      femaleDivisions = divCount;
-    });
+    List<int>? maleResult = await showDivisionInputDialog(context: context, title: "남성 복식", totalPlayers: males.length);
+    List<int>? femaleResult = await showDivisionInputDialog(context: context, title: "여성 복식", totalPlayers: females.length);
 
-    _assignDivisions(males, maleDivisions);
-    _assignDivisions(females, femaleDivisions);
+    if(maleResult != null  && femaleResult != null){
+      _assignDivisions(males, maleResult);
+      _assignDivisions(females, femaleResult);
+    }
+
 
     // 저장
     await _firestoreService.savePlayers(males, "참가자");
     await _firestoreService.savePlayers(females, "참가자");
 
     divisionCounts = {
-      "남성": maleDivisions,
-      "여성": femaleDivisions,
+      "남성": maleResult?.length ?? 1,
+      "여성": femaleResult?.length ?? 1,
       "혼성": 1,
     };
 
@@ -197,14 +203,119 @@ class _AdminTeamPageState extends TeamPageBaseState<AdminTeamPage> {
     );
   }
 
-  void _assignDivisions(List<Player> players, int divisionCount) {
-    int perDivision = (players.length / divisionCount).ceil();
-
-    for (int i = 0; i < players.length; i++) {
-      players[i].division = (i ~/ perDivision) + 1;
+  void _assignDivisions(List<Player> players, List<int> divisionSizes) {
+    int index = 0;
+    for (int div = 0; div < divisionSizes.length; div++) {
+      for (int i = 0; i < divisionSizes[div]; i++) {
+        if (index < players.length) {
+          players[index++].division = div + 1;
+        }
+      }
     }
   }
 
+
+  //note 추가
+  Future<List<int>?> showDivisionInputDialog({
+    required BuildContext context,
+    required String title,
+    required int totalPlayers,
+  }) {
+    int selectedDivision = 2; // 기본값 2부
+    List<TextEditingController> controllers = [];
+
+    void updateControllers(int count) {
+      controllers = List.generate(count, (_) => TextEditingController(),);
+    }
+
+    updateControllers(selectedDivision);
+
+    return showDialog<List<int>>(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(builder: (context, setState) {
+          return AlertDialog(
+            title: Text("$title ($totalPlayers명)"),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: List.generate(3, (index) {
+                    int division = index + 1;
+                    bool isSelected = selectedDivision == division;
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 6),
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor:
+                          isSelected ? Colors.blue : Colors.grey[300],
+                          foregroundColor:
+                          isSelected ? Colors.white : Colors.black,
+                        ),
+                        onPressed: () {
+                          setState(() {
+                            selectedDivision = division;
+                            updateControllers(division);
+                          });
+                        },
+                        child: Text("$division부"),
+                      ),
+                    );
+                  }),
+                ),
+                const SizedBox(height: 12),
+                ...List.generate(selectedDivision, (index) {
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 4),
+                    child: TextField(
+                      controller: controllers[index],
+                      keyboardType: TextInputType.number,
+                      decoration: InputDecoration(
+                        labelText: "${index + 1}부 인원 수",
+                        border: const OutlineInputBorder(),
+                      ),
+                    ),
+                  );
+                }),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text("취소"),
+              ),
+              TextButton(
+                onPressed: () {
+                  List<int> sizes = controllers
+                      .map((c) => int.tryParse(c.text) ?? 0)
+                      .toList();
+                  int sum = sizes.fold(0, (a, b) => a + b);
+                  if (sum != totalPlayers) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content:
+                        Text("입력한 인원 수의 총합이 $totalPlayers명과 일치하지 않습니다."),
+                        duration: const Duration(seconds: 2),
+                      ),
+                    );
+                    return;
+                  }
+                  Navigator.pop(context, sizes);
+                },
+                child: const Text("확인"),
+              ),
+            ],
+          );
+        });
+      },
+    );
+  }
+
+
+
+
+  ///
   List<Team> _createTeams(List<Player> players) {
     Map<int, List<Player>> grouped = {};
 

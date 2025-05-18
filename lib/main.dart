@@ -42,7 +42,7 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  bool isAdmin = false;
+  bool isAdmin = true;
   int selectedIndex = 1;
 
   void _showAdminDialog() {
