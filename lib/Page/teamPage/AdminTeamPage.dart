@@ -121,7 +121,7 @@ class _AdminTeamPageState extends TeamPageBaseState<AdminTeamPage> {
   }
 
 
-  // 팀 자동 구성
+  /// 팀 자동 구성
   Future<void> _generateTeams() async {
     List<Player> males = await _firestoreService.loadPlayers("참가자", "남성", sortByRank: true);
     List<Player> females = await _firestoreService.loadPlayers("참가자", "여성", sortByRank: true);

@@ -26,7 +26,7 @@ abstract class TeamPageBaseState<T extends TeamPageBase> extends State<T> {
 
   @override
   void dispose() {
-    verticalController.dispose(); // ❗ 추가 필요
+    verticalController.dispose();
     super.dispose();
   }
 

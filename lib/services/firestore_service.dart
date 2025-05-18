@@ -342,7 +342,7 @@ class FirestoreService {
 
   // 🔹 참가자 불러오기
   //team에서 사용됨
-  Future<List<Player>> loadPlayers(String category, String gender, {bool sortByRank = false}) async {
+  Future<List<Player>> loadPlayers(String category, String gender, {bool sortByRank = true}) async {
     Query query = _db
         .collection(category)
         .where("성별", isEqualTo: gender); // 🔹 성별 필터
