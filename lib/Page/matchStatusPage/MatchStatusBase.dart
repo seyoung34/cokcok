@@ -77,87 +77,7 @@ abstract class MatchStatusBaseState<T extends MatchStatusBase> extends State<T> 
 
 
   ///코트 상황 판
-  /*Widget _buildCourtsGrid(List<Match> matches) {
-    return Container(
-      margin: EdgeInsets.fromLTRB(8, 20, 8, 0),
-      child: GridView.count(
-        shrinkWrap: true,
-        physics: const NeverScrollableScrollPhysics(),
-        crossAxisCount: 3,
-        childAspectRatio: 1.1,
-        children: List.generate(6, (index) {
-          int courtNum = index + 1;
-
-          if (index == 1) {
-            return Container(
-              margin: const EdgeInsets.all(4),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.grey),
-                color: Colors.grey[300],
-              ),
-              child: const Center(
-                child: Text("막혀있음\n(사용 불가)", textAlign: TextAlign.center),
-              ),
-            );
-          }
-      
-          final match = matches.firstWhere(
-                (m) => m.courtNumber == courtNum,
-            orElse: () => Match(
-              id: "",
-              team1: Team.empty(),
-              team2: Team.empty(),
-              division: 0,
-              courtNumber: courtNum,
-            ),
-          );
-
-          return Container(
-            margin: const EdgeInsets.all(4),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: Colors.black54),
-              color: match.id == "" ? Colors.grey[200] : Colors.lightGreen[200],
-            ),
-            child: Center(
-              child: match.id == ""
-                  ? Text("코트 $courtNum\n(비어 있음)", textAlign: TextAlign.center)
-                  :
-                  //todo ui조정
-                Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-
-                  // 퇴장 버튼
-                  if (widget.isAdmin)
-                    ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        shape: const CircleBorder(), // 동그란 버튼 (선택 사항)
-                        padding: const EdgeInsets.all(12), // 아이콘 크기에 맞게 여백 조절
-                      ),
-                      onPressed: () async {
-                        await _firestoreService.updateMatchCourt(match.id, null, match.team1.players[0].gender, match.division.toString() + "_" + match.group.toString());
-                      },
-                      child: Icon(Icons.exit_to_app),
-                    ),
-                  Text("${match.team1.players[0].name}\n${match.team1.players[1].name}", textAlign: TextAlign.center),
-                  const Divider(color: Colors.grey, thickness: 1),
-                  Text("${match.team2.players[0].name}\n${match.team2.players[1].name}", textAlign: TextAlign.center),
-                  const SizedBox(height: 8),
-
-
-                ],
-              ),
-            ),
-          );
-
-        }),
-      ),
-    );
-  }*/
-
-  Widget _buildCourtsGrid(List<Match> matches) {
+    Widget _buildCourtsGrid(List<Match> matches) {
     return Container(
       margin: const EdgeInsets.fromLTRB(8, 20, 8, 0),
       child: GridView.count(
@@ -240,9 +160,33 @@ abstract class MatchStatusBaseState<T extends MatchStatusBase> extends State<T> 
                 )
                 :Column(
                   children: [
-                    Text(
-                      "$gender $divisionLabel",
-                      style: TextStyle(fontSize: labelSize, fontWeight: FontWeight.normal),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        Text(
+                          "$gender $divisionLabel",
+                          style: TextStyle(fontSize: labelSize, fontWeight: FontWeight.normal),
+                        ),
+                        if (widget.isAdmin)
+                          Positioned(
+                            top: 0,
+                            right: 0,
+                            child: IconButton(
+                              icon: Icon(Icons.logout, size: fontSize),
+                              tooltip: "퇴장",
+                              onPressed: () async {
+                                await _firestoreService.updateMatchCourt(
+                                  match.id,
+                                  null,
+                                  gender,
+                                  match.group != null
+                                      ? "${match.division}_${match.group}"
+                                      : match.division.toString(),
+                                );
+                              },
+                            ),
+                          ),
+                      ],
                     ),
                     const SizedBox(height: 6),
                     Expanded(

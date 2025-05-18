@@ -231,19 +231,40 @@ class FirestoreService {
         .collectionGroup('경기')
         .snapshots()
         .map((snapshot) {
-      return snapshot.docs.map((doc) {
+      final matches = snapshot.docs.map((doc) {
         final data = doc.data();
         final match = Match.fromJson(data as Map<String, dynamic>);
 
-        // ✅ 본선 경기는 제외 (group이 "본선_"으로 시작하거나, division이 본선_인 경우)
-        if (match.group?.startsWith("본선") == true || match.division.toString().startsWith("본선")) {
-          return null; // 제외
+        // 본선 제외
+        if (match.group?.startsWith("본선") == true ||
+            match.division.toString().startsWith("본선")) {
+          return null;
         }
 
         return match;
       }).whereType<Match>().toList(); // null 제거
+
+      // ✅ 혼성을 먼저 정렬
+      matches.sort((a, b) {
+        final aGender = _getMatchGenderSortKey(a);
+        final bGender = _getMatchGenderSortKey(b);
+        return aGender.compareTo(bGender); // 낮은 순서대로 정렬
+      });
+
+      return matches;
     });
   }
+
+// ⬇️ 혼성 → 남성 → 여성 순서로 정렬되도록 숫자 부여
+  int _getMatchGenderSortKey(Match m) {
+    final g1 = m.team1.players[0].gender;
+    final g2 = m.team1.players[1].gender;
+    if (g1 != g2) return 0;       // 혼성 먼저
+    if (g1 == "남성") return 1;   // 남성 그다음
+    if (g1 == "여성") return 2;   // 여성 마지막
+    return 3;                     // 그 외 (예외처리용)
+  }
+
 
   Future<void> deleteAllTournamentMatches() async {
     final firestore = FirebaseFirestore.instance;
