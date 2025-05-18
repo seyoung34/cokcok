@@ -536,7 +536,8 @@ class FirestoreService {
   }
 
 
-  Future<void> updateMatchCourt(String matchId, int courtNumber, String gender, String division) async {
+  Future<void> updateMatchCourt(String matchId, int? courtNumber, String gender, String division) async {
+    print("matchId : ${matchId}, courtNumber : ${courtNumber}, gender : ${gender}, division : ${division}");
     await _db
         .collection("경기 기록")
         .doc("콕콕 리그전")

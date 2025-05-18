@@ -72,15 +72,9 @@ class _AdminMatchTablePageState extends MatchTableBaseState<AdminMatchTablePage>
                           if (score != null) {
                             return Text(score);
                           } else if (match.courtNumber != null) {
-                            return Row(
-                              children: [
-                                getCourtIcon(match.courtNumber!), // 위에서 만든 함수 사용
-                                const SizedBox(width: 4),
-                                Text("코트 ${match.courtNumber}"),
-                              ],
-                            );
+                            return getCourtIcon(match.courtNumber!);
                           } else {
-                            return const Icon(MaterialSymbols.edit, size: 18, color: Colors.grey);
+                            return const Icon(Icons.edit, size: 18, color: Colors.grey);
                           }
                         }(),
                       ),
@@ -101,14 +95,15 @@ class _AdminMatchTablePageState extends MatchTableBaseState<AdminMatchTablePage>
 
   Icon getCourtIcon(int courtNumber) {
     switch (courtNumber) {
-      case 1: return const Icon(MaterialSymbols.counter_1, size: 18, color: Colors.green);
-      case 2: return const Icon(MaterialSymbols.counter_2, size: 18, color: Colors.green);
-      case 3: return const Icon(MaterialSymbols.counter_3, size: 18, color: Colors.green);
-      case 4: return const Icon(MaterialSymbols.counter_4, size: 18, color: Colors.green);
-      case 5: return const Icon(MaterialSymbols.counter_5, size: 18, color: Colors.green);
-      case 6: return const Icon(MaterialSymbols.counter_6, size: 18, color: Colors.green);
-      default: return const Icon(Icons.error, size: 18, color: Colors.red); // 예외 처리
+      case 1: return const Icon(Icons.looks_one_outlined, size: 18, color: Colors.green);
+      case 2: return const Icon(Icons.looks_two_outlined, size: 18, color: Colors.green);
+      case 3: return const Icon(Icons.looks_3_outlined, size: 18, color: Colors.green);
+      case 4: return const Icon(Icons.looks_4_outlined, size: 18, color: Colors.green);
+      case 5: return const Icon(Icons.looks_5_outlined, size: 18, color: Colors.green);
+      case 6: return const Icon(Icons.looks_6_outlined, size: 18, color: Colors.green);
+      default: return const Icon(Icons.error, size: 18, color: Colors.red);
     }
   }
+
 
 }

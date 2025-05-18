@@ -87,8 +87,7 @@ abstract class MatchStatusBaseState<T extends MatchStatusBase> extends State<T> 
         childAspectRatio: 1.1,
         children: List.generate(6, (index) {
           int courtNum = index + 1;
-      
-          // 2열 1행(5번 인덱스)을 막힌 코트로 처리
+
           if (index == 1) {
             return Container(
               margin: const EdgeInsets.all(4),
@@ -113,7 +112,7 @@ abstract class MatchStatusBaseState<T extends MatchStatusBase> extends State<T> 
               courtNumber: courtNum,
             ),
           );
-      
+
           return Container(
             margin: const EdgeInsets.all(4),
             decoration: BoxDecoration(
@@ -124,16 +123,35 @@ abstract class MatchStatusBaseState<T extends MatchStatusBase> extends State<T> 
             child: Center(
               child: match.id == ""
                   ? Text("코트 $courtNum\n(비어 있음)", textAlign: TextAlign.center)
-                  : Column(
+                  :
+                  //todo ui조정
+                Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
+
+                  // 퇴장 버튼
+                  if (widget.isAdmin)
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        shape: const CircleBorder(), // 동그란 버튼 (선택 사항)
+                        padding: const EdgeInsets.all(12), // 아이콘 크기에 맞게 여백 조절
+                      ),
+                      onPressed: () async {
+                        await _firestoreService.updateMatchCourt(match.id, null, match.team1.players[0].gender, match.division.toString() + "_" + match.group.toString());
+                      },
+                      child: Icon(Icons.exit_to_app),
+                    ),
                   Text("${match.team1.players[0].name}\n${match.team1.players[1].name}", textAlign: TextAlign.center),
                   const Divider(color: Colors.grey, thickness: 1),
                   Text("${match.team2.players[0].name}\n${match.team2.players[1].name}", textAlign: TextAlign.center),
+                  const SizedBox(height: 8),
+
+
                 ],
               ),
             ),
           );
+
         }),
       ),
     );
