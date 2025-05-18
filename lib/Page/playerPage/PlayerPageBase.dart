@@ -81,6 +81,7 @@ abstract class PlayerPageBaseState<T extends PlayerPageBase> extends State<T> {
         children: [
           Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
           const SizedBox(height: 8),
+
           players.isEmpty
               ? const Text("데이터 없음")
               : SizedBox(
@@ -111,6 +112,7 @@ abstract class PlayerPageBaseState<T extends PlayerPageBase> extends State<T> {
 
   List<DataColumn> buildTableColumns(void Function(String) onSort) {
     return [
+      DataColumn(label: Text("번호")),
       DataColumn(label: Text("이름"), onSort: (_, __) => onSort("이름")),
       DataColumn(label: Text("성별"), onSort: (_, __) => onSort("성별")),
       DataColumn(label: Text("순위"), onSort: (_, __) => onSort("순위")),
@@ -118,13 +120,20 @@ abstract class PlayerPageBaseState<T extends PlayerPageBase> extends State<T> {
   }
 
   List<DataRow> buildTableRows(List<Player> players) {
+    int count = 0;
+
     return players.map((player) {
-      return DataRow(cells: [
-        DataCell(Text(player.name)),
-        DataCell(Text(player.gender)),
-        DataCell(Text(player.rank.toString())),
-      ],
-      onLongPress: () => _showEditDialog(player));
+      count++;
+      return DataRow(
+        cells: [
+          DataCell(Text("$count")),
+          DataCell(Text(player.name)),
+          DataCell(Text(player.gender)),
+          DataCell(Text(player.rank.toString())),
+        ],
+        onLongPress: () => _showEditDialog(player),
+      );
+
     }).toList();
   }
 
@@ -204,13 +213,13 @@ abstract class PlayerPageBaseState<T extends PlayerPageBase> extends State<T> {
   int getSortColumnIndex(String column) {
     switch (column) {
       case "이름":
-        return 0;
-      case "성별":
         return 1;
-      case "순위":
+      case "성별":
         return 2;
+      case "순위":
+        return 3;
       default:
-        return 0;
+        return 3;
     }
   }
 
