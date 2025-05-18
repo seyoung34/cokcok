@@ -17,6 +17,7 @@ abstract class MatchTournamentBase extends StatefulWidget {
 abstract class MatchTournamentBaseState<T extends MatchTournamentBase> extends State<T> {
   final FirestoreService firestoreService = FirestoreService();
   final ScrollController verticalController = ScrollController();
+  final ScrollController horizontalController = ScrollController();
 
   List<String> divisions = [];       // 예: ["남성_1", "여성_2"]
   String? selectedDivision;
@@ -233,6 +234,7 @@ abstract class MatchTournamentBaseState<T extends MatchTournamentBase> extends S
   }
 
 
+  //note buildMatchBox
   /// ✅ 본선 매치 박스 UI (준결승/결승/3·4위 포함)
   Widget buildMatchBox(Match? match, String title, {Color? highlightColor}) {
     final team1 = match?.team1.id ?? "-";
@@ -240,117 +242,118 @@ abstract class MatchTournamentBaseState<T extends MatchTournamentBase> extends S
     final score1 = match?.team1Score?.toString() ?? "";
     final score2 = match?.team2Score?.toString() ?? "";
 
-    final isTeam1Winner = match?.winnerTeamId == match?.team1.id;
-    final isTeam2Winner = match?.winnerTeamId == match?.team2.id;
 
-    return GestureDetector(
-      onTap: widget.isAdmin && match != null && match.id.isNotEmpty
-          ? () => _showScoreDialog(match!)
-          : null,
-      child: Stack(
-        clipBehavior: Clip.none,
-        children: [
-          // 🟫 본체 박스
-          Container(
-            margin: const EdgeInsets.only(top: 12),
-            width: 220,
-            padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
-            decoration: BoxDecoration(
-              color: highlightColor ?? Colors.grey[100],
-              border: Border.all(color: Colors.grey.shade400),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Column(
-              children: [
-                // 🟥 팀1 영역
-                Stack(
-                  children: [
-                    Container(
-                      alignment: Alignment.center,
-                      width: double.infinity,
-                      height: 50,
-                      decoration: BoxDecoration(
-                        // color: isTeam1Winner ? Colors.red.shade100 : Colors.grey[200],
-                        color: Colors.grey[200],
-                        border: Border.all(color: Colors.blue.shade200),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        "$team1 ${score1.isNotEmpty ? "($score1)" : ""}",
-                        style: TextStyle(
-                          fontWeight: isTeam1Winner ? FontWeight.bold : FontWeight.normal,
-                          color: Colors.black,
-                        ),
-                      ),
-                    ),
-                    if (isTeam1Winner)
-                      const Positioned(
-                        right: 3,
-                        top: 13,
-                        child: Icon(Icons.emoji_events, size: 25, color: Colors.amber),
-                      ),
-                  ],
-                ),
+    bool isTeam1Winner = match?.winnerTeamId == match?.team1.id;
+    bool isTeam2Winner = match?.winnerTeamId == match?.team2.id;
 
-                const SizedBox(height: 12),
+    if(match == null){
+      isTeam1Winner = false;
+      isTeam2Winner = false;
+    }
 
-                // 🟦 팀2 영역
-                Stack(
-                  children: [
-                    Container(
-                      alignment: Alignment.center,
-                      width: double.infinity,
-                      height: 50,
-                      decoration: BoxDecoration(
-                        color: Colors.grey[200],
-                        border: Border.all(color: Colors.blue.shade200),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        "$team2 ${score2.isNotEmpty ? "($score2)" : ""}",
-                        style: TextStyle(
-                          fontWeight: isTeam2Winner ? FontWeight.bold : FontWeight.normal,
-                          color: Colors.black,
-                        ),
-                      ),
-                    ),
-                    if (isTeam2Winner)
-                      const Positioned(
-                        right: 3,
-                        top: 13,
-                        child: Icon(Icons.emoji_events, size: 25, color: Colors.amber),
-                      ),
-                  ],
-                ),
-              ],
-            ),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final screenWidth = MediaQuery.of(context).size.width;
+        final screenHeight = MediaQuery.of(context).size.height;
+        final isMobile = screenWidth < 600;
+        final boxWidth = isMobile ? screenWidth * 0.3 : 220.0;
+        final fontSize = isMobile ? 10.0 : 14.0;
+        final boxHeight = isMobile ? screenHeight * 0.06: 50.0;
 
-          ),
-
-
-          // 🏷 타이틀 라벨
-          Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            child: Center(
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+        Widget buildTeamBox(String name, String score, bool isWinner) {
+          print("isWinner : $isWinner");
+          return Stack(
+            children: [
+              Container(
+                alignment: Alignment.center,
+                width: double.infinity,
+                height: boxHeight,
                 decoration: BoxDecoration(
-                  color: Colors.grey[100],
-                  // border: Border.all(color: Colors.black),
-                  borderRadius: BorderRadius.circular(12),
+                  color: Colors.grey[200],
+                  border: Border.all(color: Colors.blue.shade200),
+                  borderRadius: BorderRadius.circular(8),
                 ),
-                child: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
+                child: Text(
+                  "$name ${score.isNotEmpty ? "($score)" : ""}",
+                  style: TextStyle(
+                    fontWeight: isWinner ? FontWeight.bold : FontWeight.normal,
+                    fontSize: fontSize,
+                    color: Colors.black,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
               ),
-            ),
+              if (isWinner)
+                Positioned(
+                  right: 3,
+                  top: boxHeight * 0.25, // 위치도 boxHeight에 따라 조정
+                  child: Icon(Icons.emoji_events, size: boxHeight * 0.5, color: Colors.amber),
+                ),
+            ],
+          );
+        }
+
+        return GestureDetector(
+          onTap: widget.isAdmin && match != null && match.id.isNotEmpty
+              ? () => _showScoreDialog(match!)
+              : null,
+          child: Stack(
+            clipBehavior: Clip.none,
+            children: [
+              // 🟫 본체 박스
+              Container(
+                margin: const EdgeInsets.only(top: 12),
+                width: boxWidth,
+                height: screenHeight * 0.2,
+                padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+                decoration: BoxDecoration(
+                  color: highlightColor ?? Colors.grey[100],
+                  border: Border.all(color: Colors.grey.shade400),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Column(
+                  children: [
+                    buildTeamBox(team1, score1, isTeam1Winner),
+                    const SizedBox(height: 12),
+                    buildTeamBox(team2, score2, isTeam2Winner),
+                  ],
+                ),
+              ),
+
+              // 🏷 타이틀 라벨
+              Positioned(
+                top: 0,
+                left: 0,
+                right: 0,
+                child: Center(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: Colors.grey[100],
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      title,
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: isMobile ? 10 : 13,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 
 
+
+
+
+  /// 본선 점수 입력 다이얼로그
   void _showScoreDialog(Match match) {
     final team1Controller = TextEditingController(text: match.team1Score?.toString() == "0" ? "" : match.team1Score?.toString());
     final team2Controller = TextEditingController(text: match.team2Score?.toString() == "0" ? "" : match.team2Score?.toString());
@@ -552,6 +555,7 @@ abstract class MatchTournamentBaseState<T extends MatchTournamentBase> extends S
     return stats;
   }
 
+  //note build
   /// ✅ 전체 본선 페이지 UI 구성
   @override
   Widget build(BuildContext context) {
@@ -564,19 +568,23 @@ abstract class MatchTournamentBaseState<T extends MatchTournamentBase> extends S
           const SizedBox(height: 8),
 
           // 🔹 부 선택
-          Wrap(
-            spacing: 8,
-            alignment: WrapAlignment.center,
-            children: divisions.map((div) {
-              return ChoiceChip(
-                label: Text(div),
-                selected: selectedDivision == div,
-                onSelected: (_) => setState(() => selectedDivision = div),
-              );
-            }).toList(),
+          SingleChildScrollView(
+            controller: horizontalController,
+            child: Row(
+              spacing: 8,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: divisions.map((div) {
+                return ChoiceChip(
+                  label: Text(div),
+                  selected: selectedDivision == div,
+                  onSelected: (_) => setState(() => selectedDivision = div),
+                );
+              }).toList(),
+            ),
           ),
 
           const SizedBox(height: 12),
+          Container(color: Colors.grey.shade400,height: 2,),
 
           // 🔹 본선 경기 영역
           if (selectedDivision != null)
@@ -657,6 +665,16 @@ abstract class MatchTournamentBaseState<T extends MatchTournamentBase> extends S
             icon: const Icon(Icons.emoji_events),
             label: const Text("결승 / 3·4위 생성"),
           ),
+
+          const SizedBox(height: 12),
+
+          FloatingActionButton.extended(
+              heroTag: "delete_tounament",
+              onPressed: () async{
+                firestoreService.deleteAllTournamentMatches();
+              },
+            label: const Text("토너먼트 정보 삭제"),
+          )
         ],
       )
           : null,

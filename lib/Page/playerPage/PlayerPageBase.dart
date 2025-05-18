@@ -31,6 +31,7 @@ abstract class PlayerPageBaseState<T extends PlayerPageBase> extends State<T> {
   void initState() {
     super.initState();
     loadPlayers();
+    print("initStat");
   }
 
   Future<void> loadPlayers() async {
@@ -122,9 +123,83 @@ abstract class PlayerPageBaseState<T extends PlayerPageBase> extends State<T> {
         DataCell(Text(player.name)),
         DataCell(Text(player.gender)),
         DataCell(Text(player.rank.toString())),
-      ]);
+      ],
+      onLongPress: () => _showEditDialog(player));
     }).toList();
   }
+
+  void _showEditDialog(Player player) {
+    final nameController = TextEditingController(text: player.name);
+    final genderController = TextEditingController(text: player.gender);
+    final rankController = TextEditingController(text: player.rank.toString());
+
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: Text("참가자 수정"),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: nameController,
+              decoration: const InputDecoration(labelText: "이름"),
+            ),
+            TextField(
+              controller: genderController,
+              decoration: const InputDecoration(labelText: "성별"),
+            ),
+            TextField(
+              controller: rankController,
+              decoration: const InputDecoration(labelText: "순위"),
+              keyboardType: TextInputType.number,
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("취소"),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              print("저장 눌렀음");
+              final newName = nameController.text.trim();
+              final newGender = genderController.text.trim();
+              final newRank = int.tryParse(rankController.text.trim()) ?? 0;
+
+              print("${newName}, ${newGender}, ${newRank}");
+
+              if (newName.isNotEmpty && (newGender == "남성" || newGender == "여성")) {
+                final doc = await _firestore
+                    .collection("참가자")
+                    .where(player.name, isEqualTo: player.name)
+                    .get();
+
+                print("${doc.docs.toString()}");
+
+                if (doc.docs.isNotEmpty) {
+                  await doc.docs.first.reference.update({
+                    "name": newName,
+                    "gender": newGender,
+                    "rank": newRank,
+                  });
+
+                  Navigator.pop(context);
+                  loadPlayers();
+                }
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text("이름과 성별을 올바르게 입력하세요.")),
+                );
+              }
+            },
+            child: const Text("저장"),
+          ),
+        ],
+      ),
+    );
+  }
+
 
   int getSortColumnIndex(String column) {
     switch (column) {

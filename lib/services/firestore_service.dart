@@ -245,6 +245,32 @@ class FirestoreService {
     });
   }
 
+  Future<void> deleteAllTournamentMatches() async {
+    final firestore = FirebaseFirestore.instance;
+    final tournamentRef = firestore.collection("본선 경기").doc("콕콕 리그전");
+
+    final genderList = ['남성', '여성', '혼성'];
+
+    for (final gender in genderList) {
+      final genderCollection = tournamentRef.collection(gender);
+      final genderSnapshot = await genderCollection.get();
+
+      for (final divisionDoc in genderSnapshot.docs) {
+        final matchesRef = divisionDoc.reference.collection("경기");
+        final matchesSnapshot = await matchesRef.get();
+
+        // 🔸 경기 삭제
+        for (final matchDoc in matchesSnapshot.docs) {
+          await matchDoc.reference.delete();
+        }
+
+        // 🔸 부 문서 삭제
+        await divisionDoc.reference.delete();
+      }
+    }
+  }
+
+
 
   Future<void> deleteCollection(String category) async {
     final snapshot = await _db.collection(category).get();
@@ -333,8 +359,6 @@ class FirestoreService {
     }
 
     return snapshot.docs.map((doc) {
-      print("*******************");
-      print(doc.data().toString());
       return Player.fromJson(doc.data() as Map<String, dynamic>);
     }).toList();
 
@@ -351,7 +375,6 @@ class FirestoreService {
 
       for (final divisionDoc in divisionDocs.docs) {
         final divisionId = divisionDoc.id;
-        // if (divisionId.startsWith("본선")) continue; // 본선 데이터는 건드리지 않음
 
         final matchRef = categoryRef.doc(divisionId).collection("경기");
         final matchDocs = await matchRef.get();
@@ -501,7 +524,6 @@ class FirestoreService {
 
 
   Future<void> updateMatch({ required String tournamentId, required Match match, required String gender}) async {
-    print(tournamentId + match.id.toString() + gender);
     String group = match.group != null ? "_${match.group}" : "";
     await _db
         .collection('경기 기록')
@@ -514,12 +536,12 @@ class FirestoreService {
   }
 
 
-  Future<void> updateMatchCourt(String matchId, int courtNumber, String gender, int division) async {
+  Future<void> updateMatchCourt(String matchId, int courtNumber, String gender, String division) async {
     await _db
         .collection("경기 기록")
         .doc("콕콕 리그전")
         .collection(gender)
-        .doc(division.toString())
+        .doc(division)
         .collection("경기")
         .doc(matchId)
         .update({'courtNumber': courtNumber});

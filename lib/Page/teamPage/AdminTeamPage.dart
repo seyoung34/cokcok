@@ -5,7 +5,8 @@ import 'TeamPageBase.dart';
 import '../../services/firestore_service.dart';
 
 class AdminTeamPage extends TeamPageBase {
-  const AdminTeamPage({super.key}) : super(isAdmin: true);
+  final VoidCallback onUserRequest;
+  const AdminTeamPage({super.key,required this.onUserRequest}) : super(isAdmin: true);
 
   @override
   _AdminTeamPageState createState() => _AdminTeamPageState();
@@ -13,12 +14,52 @@ class AdminTeamPage extends TeamPageBase {
 
 class _AdminTeamPageState extends TeamPageBaseState<AdminTeamPage> {
   final FirestoreService _firestoreService = FirestoreService();
+  final ScrollController verticalController = ScrollController();
 
   //note build
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("운영자 - 팀 관리")),
+      appBar: AppBar(
+        automaticallyImplyLeading: false,
+        flexibleSpace: SafeArea(
+          child: Stack(
+            children: [
+              // ⬅ 버전 정보 (좌측 하단)
+              Positioned(
+                left: 12,
+                bottom: 8,
+                child: Text(
+                  VERSION,
+                  style: TextStyle(fontSize: 12, color: Colors.grey),
+                ),
+              ),
+
+              // 🏷 중앙 타이틀
+              Center(
+                child: Text(
+                  "사용자 - 팀 확인",
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black,
+                  ),
+                ),
+              ),
+
+              // 🔐 우측 아이콘
+              Positioned(
+                right: 8,
+                top: 8,
+                child: IconButton(
+                  icon: const Icon(Icons.lock),
+                  onPressed: widget.onUserRequest,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
       body: Column(
         children: [
           Row(

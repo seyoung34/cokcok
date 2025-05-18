@@ -109,7 +109,7 @@ class _AdminMatchTournamentPageState
 
     return SizedBox(
       width: 600,
-      height: 500,
+      height: 300,
       child: Stack(
         clipBehavior: Clip.none,
         children: [

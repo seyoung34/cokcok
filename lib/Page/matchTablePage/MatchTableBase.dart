@@ -76,26 +76,33 @@ abstract class MatchTableBaseState<T extends MatchTableBase> extends State<T> {
             child: Column(
               children: [
                 SizedBox(height: 8,),
-                Wrap(
-                  alignment: WrapAlignment.center,
-                  spacing: 12,
-                  children: tableKeys.map((key) {
-                    return Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Radio<String?>(
-                          value: key,
-                          groupValue: selectedTableKey,
-                          onChanged: (value) =>
-                              setState(() => selectedTableKey = value),
-                          toggleable: true,
-                        ),
-                        Text(key),
-                      ],
-                    );
-                  }).toList(),
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  child: Row(
+                    children: tableKeys.map((key) {
+                      return Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Radio<String?>(
+                            value: key,
+                            groupValue: selectedTableKey,
+                            onChanged: (value) =>
+                                setState(() => selectedTableKey = value),
+                            toggleable: true,
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.only(right: 16),
+                            child: Text(key),
+                          ),
+                        ],
+                      );
+                    }).toList(),
+                  ),
                 ),
-                SizedBox(height: 8,),
+
+                Container(color: Colors.grey.shade400,height: 2,),
+                SizedBox(height: 6,),
                 if (selectedTableKey != null)
                   Expanded(
                       child: buildMatchTable(

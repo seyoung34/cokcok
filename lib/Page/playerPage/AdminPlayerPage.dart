@@ -18,9 +18,10 @@ class _AdminPlayerPageState extends PlayerPageBaseState<AdminPlayerPage> {
   String? selectedFile;
   FirestoreService _firestoreService = FirestoreService();
 
+  //note build
   @override
   Widget build(BuildContext context) {
-    if (isLoading) return const Center(child: CircularProgressIndicator());
+    // if (isLoading) return const Center(child: CircularProgressIndicator());
 
     return Scaffold(
       appBar: AppBar(title: const Text("운영자 - 참가자 관리")),

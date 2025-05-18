@@ -13,6 +13,7 @@ abstract class TeamPageBase extends StatefulWidget {
 
 abstract class TeamPageBaseState<T extends TeamPageBase> extends State<T> {
   final FirestoreService _firestoreService = FirestoreService();
+  ScrollController verticalController = ScrollController();
 
   List<Team> maleTeams = [];
   List<Team> femaleTeams = [];
@@ -20,6 +21,14 @@ abstract class TeamPageBaseState<T extends TeamPageBase> extends State<T> {
 
   String? selectedCategory = "남성";
   Map<String, int> divisionCounts = {};
+
+  String VERSION = "v1.0.0";
+
+  @override
+  void dispose() {
+    verticalController.dispose(); // ❗ 추가 필요
+    super.dispose();
+  }
 
   @override
   void initState() {
@@ -69,6 +78,9 @@ abstract class TeamPageBaseState<T extends TeamPageBase> extends State<T> {
   Widget buildSelectedCategoryView() {
     if (selectedCategory == null) return const SizedBox();
 
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isMobile = screenWidth < 600;
+
     List<Team> selectedTeams = selectedCategory == "남성"
         ? maleTeams
         : selectedCategory == "여성"
@@ -77,33 +89,45 @@ abstract class TeamPageBaseState<T extends TeamPageBase> extends State<T> {
 
     int divisionCount = divisionCounts[selectedCategory] ?? 1;
 
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: List.generate(divisionCount, (index) {
-        List<Team> divisionTeams =
-        selectedTeams.where((t) => t.division == index + 1).toList();
+    final divisionWidgets = List.generate(divisionCount, (index) {
+      List<Team> divisionTeams =
+      selectedTeams.where((t) => t.division == index + 1).toList();
 
-        return Expanded(
-          child: SingleChildScrollView(
-            child: Container(
-              padding: const EdgeInsets.all(8),
-              margin: EdgeInsets.all(8),
-              color: Colors.grey.shade100,
-              child: buildTeamSection(
-                "${selectedCategory!} ${index + 1}부",
-                divisionTeams,
-                selectedTeams == mixedTeams
-                    ? Colors.green.shade100
-                    : selectedTeams == maleTeams
-                    ? Colors.blue.shade200
-                    : Colors.pink.shade200,
-              ),
-            ),
-          ),
-        );
-      }),
+      return Container(
+        width: isMobile ? double.infinity : 400,
+        margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+        padding: const EdgeInsets.all(8),
+        color: Colors.grey.shade100,
+        child: buildTeamSection(
+          "${selectedCategory!} ${index + 1}부",
+          divisionTeams,
+          selectedTeams == mixedTeams
+              ? Colors.green.shade100
+              : selectedTeams == maleTeams
+              ? Colors.blue.shade200
+              : Colors.pink.shade200,
+        ),
+      );
+    });
+
+    return SingleChildScrollView(
+      controller: verticalController,
+      padding: const EdgeInsets.all(12),
+      child: isMobile
+          ? Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: divisionWidgets,
+      )
+          : Wrap(
+        spacing: 12,
+        runSpacing: 12,
+        alignment: WrapAlignment.center,
+        children: divisionWidgets,
+      ),
     );
   }
+
+
 
   Widget buildTeamSection(String title, List<Team> teams, Color color) {
     return Column(
@@ -216,6 +240,7 @@ abstract class TeamPageBaseState<T extends TeamPageBase> extends State<T> {
     }
   }
 
+  //note build
   @override
   Widget build(BuildContext context); // 자식 클래스에서 구현
 }

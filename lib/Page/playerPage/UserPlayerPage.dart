@@ -33,10 +33,12 @@ class _UserPlayerPageState extends PlayerPageBaseState<UserPlayerPage> {
             ? Column(
           children: _buildPlayerTables(),
         )
-            : Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: _buildPlayerTables(),
-        ),
+            : Container(
+              child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: _buildPlayerTables(),
+                      ),
+            ),
       ),
     );
   }

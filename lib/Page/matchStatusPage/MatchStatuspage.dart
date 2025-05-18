@@ -29,7 +29,7 @@ class _MatchStatusPageState extends State<MatchStatusPage> {
   }
 
 
-  Future<void> _assignMatchToCourt(Match match, int courtNumber, String gender, int division) async {
+  Future<void> _assignMatchToCourt(Match match, int courtNumber, String gender, String division) async {
     match.courtNumber = courtNumber;
     await _firestoreService.updateMatchCourt(match.id, courtNumber, gender, division);
     _loadMatches();
@@ -124,7 +124,7 @@ class _MatchStatusPageState extends State<MatchStatusPage> {
 
   Widget _buildWaitingCard(Match match) {
     String gender = match.team1.players[0].gender;
-    int division = match.division;
+    final division = match.group != null ? "${match.division}_${match.group}" : match.division.toString();
     String divisionLabel = "${gender} ${division}부";
     return Card(
       margin: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -149,7 +149,7 @@ class _MatchStatusPageState extends State<MatchStatusPage> {
                       .toSet();
 
                   int? availableCourt;
-                  for (int i = 1; i <= 12; i++) {
+                  for (int i = 1; i <= 6; i++) {
                     if (!usedCourts.contains(i)) {
                       availableCourt = i;
                       break;
@@ -157,6 +157,7 @@ class _MatchStatusPageState extends State<MatchStatusPage> {
                   }
 
                   if (availableCourt != null) {
+                    print("availableCourt : ${availableCourt}");
                     _assignMatchToCourt(match, availableCourt, gender, division);
                   } else {
                     ScaffoldMessenger.of(context).showSnackBar(
