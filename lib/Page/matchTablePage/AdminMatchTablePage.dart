@@ -64,7 +64,6 @@ class _AdminMatchTablePageState extends MatchTableBaseState<AdminMatchTablePage>
                         : "${match.team1Score} - ${match.team2Score}")
                         : null;
 
-                    //todo 게임중일 때 아이콘 변경하기
                     return DataCell(
                       InkWell(
                         onTap: () => showScoreDialog(match, gender),
@@ -91,18 +90,6 @@ class _AdminMatchTablePageState extends MatchTableBaseState<AdminMatchTablePage>
         ),
       ),
     );
-  }
-
-  Icon getCourtIcon(int courtNumber) {
-    switch (courtNumber) {
-      case 1: return const Icon(Icons.looks_one_outlined, size: 18, color: Colors.green);
-      case 2: return const Icon(Icons.looks_two_outlined, size: 18, color: Colors.green);
-      case 3: return const Icon(Icons.looks_3_outlined, size: 18, color: Colors.green);
-      case 4: return const Icon(Icons.looks_4_outlined, size: 18, color: Colors.green);
-      case 5: return const Icon(Icons.looks_5_outlined, size: 18, color: Colors.green);
-      case 6: return const Icon(Icons.looks_6_outlined, size: 18, color: Colors.green);
-      default: return const Icon(Icons.error, size: 18, color: Colors.red);
-    }
   }
 
 

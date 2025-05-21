@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import '../../model/Player.dart';
 import '../../model/Team.dart';
@@ -140,6 +142,7 @@ class _AdminTeamPageState extends TeamPageBaseState<AdminTeamPage> {
   Future<void> _generateTeams() async {
     List<Player> males = await _firestoreService.loadPlayers("참가자", "남성", sortByRank: true);
     List<Player> females = await _firestoreService.loadPlayers("참가자", "여성", sortByRank: true);
+    List<Player> onlyMixed = await _firestoreService.loadPlayers("참가자", "혼성", sortByRank: true);
 
     // 부 나누기 (기본 1부)
     int maleDivisions = 1;
@@ -174,7 +177,7 @@ class _AdminTeamPageState extends TeamPageBaseState<AdminTeamPage> {
 
     List<Team> newMaleTeams = _createTeams(males);
     List<Team> newFemaleTeams = _createTeams(females);
-    List<Team> newMixedTeams = _createMixedTeams(males, females);
+    List<Team> newMixedTeams = _createMixedTeams(males, females, onlyMixed);
 
     setState(() {
       maleTeams = newMaleTeams;
@@ -184,7 +187,7 @@ class _AdminTeamPageState extends TeamPageBaseState<AdminTeamPage> {
 
     await _firestoreService.saveTeams(maleTeams, "남성 복식 팀");
     await _firestoreService.saveTeams(femaleTeams, "여성 복식 팀");
-    await _firestoreService.saveTeams(mixedTeams, "혼성 복식 팀");
+    await _firestoreService.saveTeams(mixedTeams, "혼성 복식 팀"); ///혼성 복식 팀
     await _firestoreService.saveDivision(divisionCounts, "부");
   }
 
@@ -385,29 +388,42 @@ class _AdminTeamPageState extends TeamPageBaseState<AdminTeamPage> {
     return result;
   }*/
 
-  List<Team> _createMixedTeams(List<Player> males, List<Player> females) {
-    List<Player> mixedMales = males.where((p) => p.isMixed).toList();
-    List<Player> mixedFemales = females.where((p) => p.isMixed).toList();
 
-    // mixedMales.shuffle();
-    // mixedFemales.shuffle();
+  List<Team> _createMixedTeams(List<Player> males, List<Player> females, List<Player> onlyMixed) {
+    final mixedMales = males.where((p) => p.isMixed).toList();
+    final mixedFemales = females.where((p) => p.isMixed).toList();
+    final addMixed = onlyMixed.where((p) => p.isMixed).toList();
 
-
-    int teamCount = mixedMales.length;
     List<Team> result = [];
 
-    for (int i = 0; i < teamCount; i++) {
-      final male = mixedMales[i];
-      final female = mixedFemales[i];
-      result.add(Team(
-        id: "혼성-${i + 1}_${female.name}-${male.name}",
-        players: [female, male],
-        division: 1, // 혼성은 division 하나만 있다고 가정
-      ));
+    // ⛳ 남녀 짝지어 팀 구성
+    final pairCount = min(mixedMales.length, mixedFemales.length);
+    for (int i = 0; i < pairCount; i++) {
+      result.add(
+        Team(
+          id: "혼성-${i + 1}_${mixedMales[i].name}-${mixedFemales[i].name}",
+          players: [mixedMales[i],mixedFemales[i]],
+          division: 1,
+        ),
+      );
     }
 
+    // ⛳ 혼성만 참가하는 사람들 2명씩 팀 구성
+    final mixedTeamStartIndex = result.length + 1;
+    for (int i = 0; i + 1 < addMixed.length; i += 2) {
+      result.add(
+        Team(
+          id: "혼성-${mixedTeamStartIndex + (i ~/ 2)}_${addMixed[i].name}-${addMixed[i + 1].name}",
+          players: [addMixed[i], addMixed[i + 1]],
+          division: 1,
+        ),
+      );
+    }
+
+    print("혼성 팀 수: ${result.length}");
     return result;
   }
+
 
 
 }

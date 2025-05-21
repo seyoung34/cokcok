@@ -213,27 +213,25 @@ abstract class MatchTableBaseState<T extends MatchTableBase> extends State<T> {
 
     final maleTeams = await _firestoreService.loadTeams("남성 복식 팀");
     final femaleTeams = await _firestoreService.loadTeams("여성 복식 팀");
-    final mixedTeams = await _firestoreService.loadTeams("혼성 복식 팀");
+    // final mixedTeams = await _firestoreService.loadTeams("혼성 복식 팀");
 
     final divisionInfo = await _firestoreService.loadDivision("부");
     matchTable.clear(); // 기존 메모리 초기화
 
     await _processCategory("남성", maleTeams, divisionInfo["남성"] ?? 1);
     await _processCategory("여성", femaleTeams, divisionInfo["여성"] ?? 1);
-    await _processCategory("혼성", mixedTeams, divisionInfo["혼성"] ?? 1);
+    // await _processCategory("혼성", mixedTeams, divisionInfo["혼성"] ?? 1);
 
     await _firestoreService.saveMatches(matchTable, widget.tournamentId);
   }
 
 
-  Future<void> _processCategory(
-      String category, List<Team> teams, int maxDivision) async {
+  Future<void> _processCategory(String category, List<Team> teams, int maxDivision) async {
     for (int division = 1; division <= maxDivision; division++) {
       final filtered = teams.where((t) => t.division == division).toList();
 
       if (filtered.length >= 6) {
-        final shouldSplit =
-        await _askGroupSplit(category, division, filtered.length);
+        final shouldSplit = await _askGroupSplit(category, division, filtered.length);
 
         if (shouldSplit) {
           _splitTeamsIntoGroups(filtered); // A, B 조 나누기
@@ -433,4 +431,17 @@ abstract class MatchTableBaseState<T extends MatchTableBase> extends State<T> {
 
   /// 자식 클래스에서 override
   Widget buildMatchTable(List<Match> matches);
+
+  Icon getCourtIcon(int courtNumber) {
+    const double iconSize = 20;
+    switch (courtNumber) {
+      case 1: return const Icon(Icons.looks_one_outlined, size: iconSize, color: Colors.blue);
+      case 2: return const Icon(Icons.looks_two_outlined, size: iconSize, color: Colors.blue);
+      case 3: return const Icon(Icons.looks_3_outlined, size: iconSize, color: Colors.blue);
+      case 4: return const Icon(Icons.looks_4_outlined, size: iconSize, color: Colors.blue);
+      case 5: return const Icon(Icons.looks_5_outlined, size: iconSize, color: Colors.blue);
+      case 6: return const Icon(Icons.looks_6_outlined, size: iconSize, color: Colors.blue);
+      default: return const Icon(Icons.error, size: iconSize, color: Colors.red);
+    }
+  }
 }

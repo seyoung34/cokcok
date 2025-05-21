@@ -22,8 +22,8 @@ class _UserMatchTablePageState extends MatchTableBaseState<UserMatchTablePage> {
     return _buildDataTable(teams, matches, teamStats);
   }
 
-
-  Widget _buildDataTable(List<Team> teams, List<Match> matches, Map<String, Map<String, dynamic>> stats) {
+  Widget _buildDataTable(List<Team> teams, List<Match> matches,
+      Map<String, Map<String, dynamic>> stats) {
     return Scrollbar(
       thumbVisibility: true,
       controller: verticalController,
@@ -40,7 +40,11 @@ class _UserMatchTablePageState extends MatchTableBaseState<UserMatchTablePage> {
               columns: [
                 const DataColumn(label: Text("팀명")),
                 ...teams.map((t) => DataColumn(label: Text(t.id))),
-                const DataColumn(label: Text("순위",style: TextStyle(fontFamily: 'BMJUA'),)),
+                const DataColumn(
+                    label: Text(
+                  "순위",
+                  style: TextStyle(fontFamily: 'BMJUA'),
+                )),
                 const DataColumn(label: Text("승점")),
                 const DataColumn(label: Text("득실")),
               ],
@@ -48,12 +52,20 @@ class _UserMatchTablePageState extends MatchTableBaseState<UserMatchTablePage> {
                 return DataRow(cells: [
                   DataCell(Text(rowTeam.id)),
                   ...teams.map((colTeam) {
-                    if (rowTeam.id == colTeam.id) return const DataCell(SizedBox());
+                    if (rowTeam.id == colTeam.id)
+                      return const DataCell(SizedBox());
 
                     final match = matches.firstWhere(
-                          (m) => (m.team1.id == rowTeam.id && m.team2.id == colTeam.id) ||
-                          (m.team1.id == colTeam.id && m.team2.id == rowTeam.id),
-                      orElse: () => Match(id: '', team1: rowTeam, team2: colTeam, division: rowTeam.division),
+                      (m) =>
+                          (m.team1.id == rowTeam.id &&
+                              m.team2.id == colTeam.id) ||
+                          (m.team1.id == colTeam.id &&
+                              m.team2.id == rowTeam.id),
+                      orElse: () => Match(
+                          id: '',
+                          team1: rowTeam,
+                          team2: colTeam,
+                          division: rowTeam.division),
                     );
 
                     if (match.isCompleted) {
@@ -63,7 +75,15 @@ class _UserMatchTablePageState extends MatchTableBaseState<UserMatchTablePage> {
                       return DataCell(Center(child: Text(score)));
                     }
 
-                    return const DataCell(SizedBox()); // 연필 아이콘 없음
+                    return DataCell(
+                      InkWell(
+                        child: () {
+                          if (match.courtNumber != null) {
+                            return getCourtIcon(match.courtNumber!);
+                          }
+                        }(),
+                      ),
+                    );
                   }),
                   DataCell(Text("${stats[rowTeam.id]!["rank"]}")),
                   DataCell(Text("${stats[rowTeam.id]!["wins"]}")),
@@ -76,5 +96,4 @@ class _UserMatchTablePageState extends MatchTableBaseState<UserMatchTablePage> {
       ),
     );
   }
-
 }

@@ -1,4 +1,5 @@
 import 'package:cokcok/Page/MatchTournament/AdminMatchTournamentPage.dart';
+import 'package:cokcok/Page/MatchTournament/Tournament.dart';
 import 'package:cokcok/Page/MatchTournament/UserMatchTournamentPage.dart';
 import 'package:cokcok/Page/matchStatusPage/AdminMatchStatusPage.dart';
 import 'package:cokcok/Page/matchStatusPage/UserMatchStatusPage.dart';
@@ -6,6 +7,7 @@ import 'package:cokcok/Page/matchTablePage/AdminMatchTablePage.dart';
 import 'package:cokcok/Page/matchTablePage/UserMatchTablePage.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'Page/MatchTournament/MixedLeaguePage.dart';
 import 'firebase_options.dart';
 import 'Page/playerPage/UserPlayerPage.dart';
 import 'Page/playerPage/AdminPlayerPage.dart';
@@ -128,6 +130,7 @@ class _HomePageState extends State<HomePage> {
             AdminTeamPage(onUserRequest: _showUserDialog),
             const AdminMatchTablePage(tournamentId: "콕콕 리그전"),
             const AdminMatchTournamentPage(tournamentId: "콕콕 리그전"),
+            const MixedLeaguePage(),
             const AdminMatchStatusPage(),
           ]
 
@@ -169,9 +172,9 @@ class _HomePageState extends State<HomePage> {
                       BottomNavigationBarItem(
                           icon: Icon(Icons.sports_tennis), label: '예선 점수표'),
                       BottomNavigationBarItem(
-                        icon: Icon(Icons.emoji_events),
-                        label: '본선 토너먼트',
-                      ),
+                        icon: Icon(Icons.emoji_events), label: '본선 토너먼트',),
+                      BottomNavigationBarItem(
+                        icon: Icon(Icons.emoji_events), label: '혼복 리그전',),
                       BottomNavigationBarItem(
                           icon: Icon(Icons.personal_video), label: '상황판'),
                     ]

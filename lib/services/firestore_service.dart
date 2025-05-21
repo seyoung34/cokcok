@@ -437,6 +437,7 @@ class FirestoreService {
         'name': docName,
         'createdAt': FieldValue.serverTimestamp(),
         'tournamentId': tournamentId,
+        'isCompleted' : false
       });
 
       for (var match in entry.value) {

@@ -212,7 +212,7 @@ abstract class TeamPageBaseState<T extends TeamPageBase> extends State<T> {
     return Container(
       padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
-        color: player.gender == "남성" ? Colors.blue.shade100 : Colors.pink.shade100,
+        color: player.gender == "남성" ? Colors.blue.shade100 : player.gender == "여성" ? Colors.pink.shade100 : Colors.green.shade300,
         borderRadius: BorderRadius.circular(6),
       ),
       child: Text(player.name, style: TextStyle(fontSize: 16),),
