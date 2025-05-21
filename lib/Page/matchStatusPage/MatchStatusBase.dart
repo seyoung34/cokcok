@@ -178,7 +178,7 @@ abstract class MatchStatusBaseState<T extends MatchStatusBase> extends State<T> 
                                 await _firestoreService.updateMatchCourt(
                                   match.id,
                                   null,
-                                  gender,
+                                  gender == "혼성" ? "혼성 토너먼트" : gender,
                                   match.group != null
                                       ? "${match.division}_${match.group}"
                                       : match.division.toString(),
@@ -232,7 +232,7 @@ abstract class MatchStatusBaseState<T extends MatchStatusBase> extends State<T> 
 
   ///대기팀
   Widget _buildWaitingCard(Match match) {
-    final gender = match.team1.players[0].gender == match.team1.players[1].gender ? match.team1.players[0].gender : "혼성";
+    final gender = match.team1.players[0].gender == match.team1.players[1].gender ? match.team1.players[0].gender : "혼성 토너먼트";
     final division = match.group != null ? "${match.division}_${match.group}" : match.division.toString();
 
     final label = "$gender ${division}부";

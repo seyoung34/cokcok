@@ -23,8 +23,90 @@ class FirestoreService {
     return snapshot.docs.map((doc) => Match.fromJson(doc.data())).toList();
   }
 
+  ///혼성 리그전 팀 불러오기
+  Future<List<Team>> loadMixedLeagueTeams() async {
+    final snapshot = await _db.collection("혼성 복식 팀").get();
+    return snapshot.docs.map((doc) => Team.fromJson(doc.data())).toList();
+  }
 
-  /// 본선 경기 실시간 수신 (ex: "남성_1")
+
+  ///본선 경기 불러오기(특정 division)
+  Future<List<Match>> loadMatchesForTournament(String gender, int division) async {
+    final snapshot = await _db
+        .collection("본선 경기")
+        .doc("콕콕 리그전")
+        .collection(gender)
+        .doc(division.toString())
+        .collection("경기")
+        .get();
+
+    return snapshot.docs.map((doc) => Match.fromJson(doc.data())).toList();
+  }
+
+
+  ///혼성 경기 기록 불러오기
+  //todo stream으로 변경해야할 듯
+  Future<List<Match>> loadMixedMatches() async {
+    final snapshot = await FirebaseFirestore.instance
+        .collection("경기 기록")
+        .doc("콕콕 리그전")
+        .collection("혼성")
+        .doc("1")
+        .collection("경기")
+        .get();
+
+    return snapshot.docs
+        .map((doc) => Match.fromJson(doc.data()))
+        .toList();
+  }
+
+  /// 혼성 토너먼트 경기 실시간 구독
+  Stream<List<Match>> watchMixedTournament() {
+    return _db
+        .collection("경기 기록")
+        .doc("콕콕 리그전")
+        .collection("혼성 토너먼트")
+        .doc("1")
+        .collection("경기")
+        .snapshots()
+        .map((snapshot) => snapshot.docs
+        .map((doc) => Match.fromJson(doc.data()))
+        .toList());
+  }
+
+  /// 남성 본선 토너먼트 경기 실시간 구독
+  Stream<List<Match>> watchFinalMatches(String gender, int division) {
+    return _db
+        .collection("경기 기록")
+        .doc("콕콕 리그전")
+        .collection(gender)
+        .doc("본선_$division")
+        .collection("경기")
+        .snapshots()
+        .map((snapshot) => snapshot.docs
+        .map((doc) => Match.fromJson(doc.data()))
+        .toList());
+  }
+
+  Future<void> saveMixedTournamentMatches(List<Match> matches) async {
+    final batch = _db.batch();
+    final colRef = _db
+        .collection("경기 기록")
+        .doc("콕콕 리그전")
+        .collection("혼성 토너먼트")
+        .doc("1")
+        .collection("경기");
+
+    for (final match in matches) {
+      batch.set(colRef.doc(match.id), match.toJson());
+    }
+
+    await batch.commit();
+  }
+
+
+
+/// 본선 경기 실시간 수신 (ex: "남성_1")
   Stream<List<Match>> watchTournamentMatchesByDivision(String divisionKey) {
     final parts = divisionKey.split('_');
     final gender = parts[0];  ///남성, 여성, 혼성
@@ -46,6 +128,28 @@ class FirestoreService {
     final doc = await _db.collection('부').doc("${gender}_$division").get();
     return doc.exists && (doc.data()?['isCompleted'] == true);
   }
+
+  Future<void> updateDivisionCompletion(String gender, String groupKey) async {
+    final matchesSnapshot = await _db
+        .collection("경기 기록")
+        .doc("콕콕 리그전")
+        .collection(gender)
+        .doc(groupKey)
+        .collection("경기")
+        .get();
+
+    final allCompleted = matchesSnapshot.docs.every((doc) => doc.data()["isCompleted"] == true);
+
+    if (allCompleted) {
+      await _db
+          .collection("경기 기록")
+          .doc("콕콕 리그전")
+          .collection(gender)
+          .doc(groupKey)
+          .update({"isCompleted": true});
+    }
+  }
+
 
   Future<bool> hasFinalMatches(String tournamentId, String gender, int division) async {
     final snapshot = await _db
@@ -78,6 +182,57 @@ class FirestoreService {
     await docRef.set(match.toJson());
   }
 
+  Future<List<Match>> loadAllCurrentTournamentMatches(String selectedCategory) async {
+    if (selectedCategory == "혼성 토너먼트") {
+      // 혼성 토너먼트
+      final snapshot = await _db
+          .collection("경기 기록")
+          .doc("콕콕 리그전")
+          .collection("혼성 토너먼트")
+          .doc("1")
+          .collection("경기")
+          .get();
+
+      return snapshot.docs.map((doc) => Match.fromJson(doc.data())).toList();
+    }
+
+    if (selectedCategory.startsWith("남성")) {
+      // 남성 본선
+      final division = int.tryParse(selectedCategory.split(" ")[1].replaceAll("부", "")) ?? 1;
+
+      final snapshot = await _db
+          .collection("경기 기록")
+          .doc("콕콕 리그전")
+          .collection("남성")
+          .doc("본선_$division")
+          .collection("경기")
+          .get();
+
+      return snapshot.docs.map((doc) => Match.fromJson(doc.data())).toList();
+    }
+
+    // 지원되지 않는 카테고리
+    return [];
+  }
+
+
+  Future<void> updateTournamentScore(Match match) async {
+    // final gender = match.team1.players[0].gender;
+    // final division = match.division;
+    // final docPath = gender == "혼성"
+    //     ? "혼성 토너먼트/1"
+    //     : "\$gender/본선_\$division";
+
+    await _db
+        .collection("경기 기록")
+        .doc("콕콕 리그전")
+        .collection("혼성 토너먼트")
+        .doc("1")
+        .collection("경기")
+        .doc(match.id)  //match id가 다름
+        .set(match.toJson());
+  }
+
 
   /// 특정 그룹(성별, division, group)의 경기 완료 여부 갱신
   Future<void> updateGroupCompletionStatus({
@@ -102,24 +257,6 @@ class FirestoreService {
 
     await groupDoc.set({'isCompleted': allCompleted}, SetOptions(merge: true));
     print("일단 실행..");
-  }
-
-  /// 본선 경기 실시간 스트림
-  Stream<List<Match>> watchFinalMatches({
-    required String tournamentId,
-    required String gender,
-    required int division,
-  }) {
-    return _db
-        .collection("본선 경기")
-        .doc(tournamentId)
-        .collection(gender)
-        .doc(division.toString())
-        .collection("경기")
-        .snapshots()
-        .map((snapshot) {
-      return snapshot.docs.map((doc) => Match.fromJson(doc.data())).toList();
-    });
   }
 
 
@@ -147,7 +284,11 @@ class FirestoreService {
     await batch.commit();
   }
 
-  /// 본선 경기 저장
+
+
+
+
+/// 본선 경기 저장
   Future<void> saveTournamentMatches({
     required String tournamentId,
     required String gender,
@@ -236,8 +377,8 @@ class FirestoreService {
         final match = Match.fromJson(data as Map<String, dynamic>);
 
         // 본선 제외
-        if (match.group?.startsWith("본선") == true ||
-            match.division.toString().startsWith("본선")) {
+        if (match.group?.startsWith("round") == true ||
+            match.division.toString().startsWith("round")) {
           return null;
         }
 
@@ -560,6 +701,9 @@ class FirestoreService {
 
   Future<void> updateMatchCourt(String matchId, int? courtNumber, String gender, String division) async {
     print("matchId : ${matchId}, courtNumber : ${courtNumber}, gender : ${gender}, division : ${division}");
+    if(gender == "혼성 토너먼트"){
+      division = "1";
+    }
     await _db
         .collection("경기 기록")
         .doc("콕콕 리그전")

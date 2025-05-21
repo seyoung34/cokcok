@@ -1,12 +1,15 @@
 import 'package:cokcok/Page/MatchTournament/AdminMatchTournamentPage.dart';
 import 'package:cokcok/Page/MatchTournament/Tournament.dart';
+import 'package:cokcok/Page/MatchTournament/UnifiedTournamentPage.dart';
 import 'package:cokcok/Page/MatchTournament/UserMatchTournamentPage.dart';
+import 'package:cokcok/Page/MatchTournament/UserTournamentPage.dart';
 import 'package:cokcok/Page/matchStatusPage/AdminMatchStatusPage.dart';
 import 'package:cokcok/Page/matchStatusPage/UserMatchStatusPage.dart';
 import 'package:cokcok/Page/matchTablePage/AdminMatchTablePage.dart';
 import 'package:cokcok/Page/matchTablePage/UserMatchTablePage.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'Page/MatchTournament/AdminTournamentPage.dart';
 import 'Page/MatchTournament/MixedLeaguePage.dart';
 import 'firebase_options.dart';
 import 'Page/playerPage/UserPlayerPage.dart';
@@ -126,21 +129,23 @@ class _HomePageState extends State<HomePage> {
 
         ///Admin
         ? [
-            const AdminPlayerPage(),
-            AdminTeamPage(onUserRequest: _showUserDialog),
-            const AdminMatchTablePage(tournamentId: "콕콕 리그전"),
-            const AdminMatchTournamentPage(tournamentId: "콕콕 리그전"),
-            const MixedLeaguePage(),
-            const AdminMatchStatusPage(),
+            const AdminPlayerPage(),  //참가자
+            AdminTeamPage(onUserRequest: _showUserDialog), //팀 구성
+            const AdminMatchTablePage(tournamentId: "콕콕 리그전"), //예선 점수표 테이블
+            // const AdminMatchTournamentPage(tournamentId: "콕콕 리그전"),
+            // const MixedLeaguePage(),
+            const AdminTournamentPage(),  //토너먼트
+            const AdminMatchStatusPage(), //상태
           ]
 
         /// User
         : [
             // UserPlayerPage(onAdminRequest: _showAdminDialog),
-            UserTeamPage(onAdminRequest: _showAdminDialog),
-            const UserMatchTablePage(tournamentId: "콕콕 리그전"),
-            const UserMatchTournamentPage(tournamentId: "콕콕 리그전"),
-            const UserMatchStatusPage(),
+            UserTeamPage(onAdminRequest: _showAdminDialog), //팀 구성
+            const UserMatchTablePage(tournamentId: "콕콕 리그전"), //예선 점수표 테이블
+            // const UserMatchTournamentPage(tournamentId: "콕콕 리그전"),
+            const UserTournamentPage(), //토너먼트
+            const UserMatchStatusPage(), //상태
           ];
 
     return Scaffold(
@@ -174,8 +179,6 @@ class _HomePageState extends State<HomePage> {
                       BottomNavigationBarItem(
                         icon: Icon(Icons.emoji_events), label: '본선 토너먼트',),
                       BottomNavigationBarItem(
-                        icon: Icon(Icons.emoji_events), label: '혼복 리그전',),
-                      BottomNavigationBarItem(
                           icon: Icon(Icons.personal_video), label: '상황판'),
                     ]
                   : const [
@@ -184,9 +187,7 @@ class _HomePageState extends State<HomePage> {
                       BottomNavigationBarItem(
                           icon: Icon(Icons.sports_tennis), label: '예선 점수표'),
                       BottomNavigationBarItem(
-                        icon: Icon(Icons.emoji_events),
-                        label: '본선 토너먼트',
-                      ),
+                        icon: Icon(Icons.emoji_events), label: '본선 토너먼트',),
                       BottomNavigationBarItem(
                           icon: Icon(Icons.personal_video), label: '상황판'),
                     ],

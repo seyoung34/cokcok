@@ -213,13 +213,14 @@ abstract class MatchTableBaseState<T extends MatchTableBase> extends State<T> {
 
     final maleTeams = await _firestoreService.loadTeams("남성 복식 팀");
     final femaleTeams = await _firestoreService.loadTeams("여성 복식 팀");
-    // final mixedTeams = await _firestoreService.loadTeams("혼성 복식 팀");
+    final mixedTeams = await _firestoreService.loadTeams("혼성 복식 팀");
 
     final divisionInfo = await _firestoreService.loadDivision("부");
     matchTable.clear(); // 기존 메모리 초기화
 
     await _processCategory("남성", maleTeams, divisionInfo["남성"] ?? 1);
     await _processCategory("여성", femaleTeams, divisionInfo["여성"] ?? 1);
+    //todo 혼성은 토너먼트로 경기 기록 만들기
     // await _processCategory("혼성", mixedTeams, divisionInfo["혼성"] ?? 1);
 
     await _firestoreService.saveMatches(matchTable, widget.tournamentId);

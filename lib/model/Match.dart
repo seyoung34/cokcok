@@ -61,6 +61,32 @@ class Match {
     );
   }
 
+  Match copyWith({
+    String? id,
+    Team? team1,
+    Team? team2,
+    int? team1Score,
+    int? team2Score,
+    String? group,
+    int? division,
+    bool? isCompleted,
+    String? winnerTeamId,
+    int? courtNumber,
+  }) {
+    return Match(
+      id: id ?? this.id,
+      team1: team1 ?? this.team1,
+      team2: team2 ?? this.team2,
+      team1Score: team1Score ?? this.team1Score,
+      team2Score: team2Score ?? this.team2Score,
+      group: group ?? this.group,
+      division: division ?? this.division,
+      isCompleted: isCompleted ?? this.isCompleted,
+      winnerTeamId: winnerTeamId ?? this.winnerTeamId,
+      courtNumber: courtNumber ?? this.courtNumber,
+    );
+  }
+
 }
 
 
