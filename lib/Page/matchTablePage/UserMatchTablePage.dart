@@ -24,72 +24,75 @@ class _UserMatchTablePageState extends MatchTableBaseState<UserMatchTablePage> {
 
   Widget _buildDataTable(List<Team> teams, List<Match> matches,
       Map<String, Map<String, dynamic>> stats) {
-    return Scrollbar(
-      thumbVisibility: true,
-      controller: verticalController,
-      child: SingleChildScrollView(
+    return Container(
+      margin: EdgeInsets.fromLTRB(6, 4, 6, 10),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        color: Colors.white,
+      ),
+      child: Scrollbar(
+        thumbVisibility: true,
         controller: verticalController,
-        scrollDirection: Axis.vertical,
-        child: Scrollbar(
-          thumbVisibility: true,
-          controller: horizontalController,
-          child: SingleChildScrollView(
+        child: SingleChildScrollView(
+          controller: verticalController,
+          scrollDirection: Axis.vertical,
+          child: Scrollbar(
+            thumbVisibility: true,
             controller: horizontalController,
-            scrollDirection: Axis.horizontal,
-            child: DataTable(
-              columns: [
-                const DataColumn(label: Text("팀명")),
-                ...teams.map((t) => DataColumn(label: Text(t.id))),
-                const DataColumn(
-                    label: Text(
-                  "순위",
-                  style: TextStyle(fontFamily: 'BMJUA'),
-                )),
-                const DataColumn(label: Text("승점")),
-                const DataColumn(label: Text("득실")),
-              ],
-              rows: teams.map((rowTeam) {
-                return DataRow(cells: [
-                  DataCell(Text(rowTeam.id)),
-                  ...teams.map((colTeam) {
-                    if (rowTeam.id == colTeam.id)
-                      return const DataCell(SizedBox());
+            child: SingleChildScrollView(
+              controller: horizontalController,
+              scrollDirection: Axis.horizontal,
+              child: DataTable(
+                columns: [
+                  DataColumn(label: Text("${teams[0].players[0].gender}_${matches[0].division}${matches[0].group != null ? "_${matches[0].group}" : ""}")),
+                  ...teams.map((t) => DataColumn(label: Text(t.id))),
+                  const DataColumn(label: Text("순위")),
+                  const DataColumn(label: Text("승점")),
+                  const DataColumn(label: Text("득실")),
+                ],
+                rows: teams.map((rowTeam) {
+                  return DataRow(cells: [
+                    DataCell(Text(rowTeam.id)),
+                    ...teams.map((colTeam) {
+                      if (rowTeam.id == colTeam.id)
+                        return const DataCell(SizedBox());
 
-                    final match = matches.firstWhere(
-                      (m) =>
-                          (m.team1.id == rowTeam.id &&
-                              m.team2.id == colTeam.id) ||
-                          (m.team1.id == colTeam.id &&
-                              m.team2.id == rowTeam.id),
-                      orElse: () => Match(
-                          id: '',
-                          team1: rowTeam,
-                          team2: colTeam,
-                          division: rowTeam.division),
-                    );
+                      final match = matches.firstWhere(
+                        (m) =>
+                            (m.team1.id == rowTeam.id &&
+                                m.team2.id == colTeam.id) ||
+                            (m.team1.id == colTeam.id &&
+                                m.team2.id == rowTeam.id),
+                        orElse: () => Match(
+                            id: '',
+                            team1: rowTeam,
+                            team2: colTeam,
+                            division: rowTeam.division),
+                      );
 
-                    if (match.isCompleted) {
-                      final score = rowTeam.id == match.team2.id
-                          ? "${match.team2Score} - ${match.team1Score}"
-                          : "${match.team1Score} - ${match.team2Score}";
-                      return DataCell(Center(child: Text(score)));
-                    }
+                      if (match.isCompleted) {
+                        final score = rowTeam.id == match.team2.id
+                            ? "${match.team2Score} - ${match.team1Score}"
+                            : "${match.team1Score} - ${match.team2Score}";
+                        return DataCell(Center(child: Text(score)));
+                      }
 
-                    return DataCell(
-                      InkWell(
-                        child: () {
-                          if (match.courtNumber != null) {
-                            return getCourtIcon(match.courtNumber!);
-                          }
-                        }(),
-                      ),
-                    );
-                  }),
-                  DataCell(Text("${stats[rowTeam.id]!["rank"]}")),
-                  DataCell(Text("${stats[rowTeam.id]!["wins"]}")),
-                  DataCell(Text("${stats[rowTeam.id]!["diff"]}")),
-                ]);
-              }).toList(),
+                      return DataCell(
+                        InkWell(
+                          child: () {
+                            if (match.courtNumber != null) {
+                              return getCourtIcon(match.courtNumber!);
+                            }
+                          }(),
+                        ),
+                      );
+                    }),
+                    DataCell(Text("${stats[rowTeam.id]!["rank"]}")),
+                    DataCell(Text("${stats[rowTeam.id]!["wins"]}")),
+                    DataCell(Text("${stats[rowTeam.id]!["diff"]}")),
+                  ]);
+                }).toList(),
+              ),
             ),
           ),
         ),

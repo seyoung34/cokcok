@@ -39,7 +39,7 @@ class _AdminMatchTablePageState extends MatchTableBaseState<AdminMatchTablePage>
             scrollDirection: Axis.horizontal,
             child: DataTable(
               columns: [
-                const DataColumn(label: Text("팀명")),
+                DataColumn(label: Text("${gender}_${matches[0].division}_${matches[0].group}")),
                 ...teams.map((t) => DataColumn(label: Text(t.id))),
                 const DataColumn(label: Text("순위")),
                 const DataColumn(label: Text("승점")),

@@ -24,8 +24,6 @@ abstract class MatchTableBaseState<T extends MatchTableBase> extends State<T> {
   Map<String, List<Match>> matchTable = {};
 
 
-
-
   @override
   void dispose() {
     verticalController.dispose();
@@ -44,6 +42,8 @@ abstract class MatchTableBaseState<T extends MatchTableBase> extends State<T> {
 
         final matches = snapshot.data!;
         final Map<String, List<Match>> matchTable = {};
+        final Set<String> tableKeys = Set();
+        String tableKey;
 
         for (var match in matches) {
           final p1Gender = match.team1.players[0].gender;
@@ -55,27 +55,44 @@ abstract class MatchTableBaseState<T extends MatchTableBase> extends State<T> {
 
 
           // 그룹까지 포함한 key 구성
-          final key = "${category}_${match.division}${match.group != null ? "_${match.group}" : ""}";
+          final key = "${category}_${match.division}${match.group != null
+              ? "_${match.group}"
+              : ""}";
           matchTable.putIfAbsent(key, () => []).add(match);
+          tableKey = "${category}_${match.division}";
+          tableKeys.add(tableKey);
         }
 
-        final tableKeys = matchTable.keys.toList()..sort();
+        // final tableKeys = matchTable.keys.toList()
+        //   ..sort();
+        // tableKeys.sort();
         selectedTableKey ??= tableKeys.isNotEmpty ? tableKeys.first : null;
 
+        final filteredKeys = matchTable.keys
+            .where((key) => key.startsWith(selectedTableKey!))
+            .toList()
+          ..sort(); // A, B 순 정렬
+
+        final filteredMatchTables = filteredKeys
+            .map((key) => matchTable[key]!)
+            .toList();
+
+
+
         return Scaffold(
-          body: matchTable.isEmpty
-              ? widget.isAdmin
-              ? Center(
-            child: ElevatedButton(
-              onPressed: _showStartDialog,
-              child: const Text("리그전 시작"),
-            ),
-          )
-              : const Center(child: Text("경기 데이터가 아직 생성되지 않았습니다."))
-              : Center(
-            child: Column(
-              children: [
-                SizedBox(height: 8,),
+            body: matchTable.isEmpty
+                ? widget.isAdmin
+                ? Center(
+              child: ElevatedButton(
+                onPressed: _showStartDialog,
+                child: const Text("리그전 시작"),
+              ),
+            )
+                : const Center(child: Text("경기 데이터가 아직 생성되지 않았습니다."))
+                : Center(
+                child: Column(
+                  children: [
+                  SizedBox(height: 8,),
                 SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
                   padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -102,42 +119,56 @@ abstract class MatchTableBaseState<T extends MatchTableBase> extends State<T> {
                   ),
                 ),
                 SizedBox(height: 6,),
-                Container(color: Colors.grey.shade400,height: 2,),
+                Container(color: Colors.grey.shade400, height: 2,),
                 SizedBox(height: 6,),
                 if (selectedTableKey != null)
                   Expanded(
-                      child: buildMatchTable(
-                          matchTable[selectedTableKey!] ?? [])),
-              ],
-            ),
-          ),
-
-          floatingActionButton: matchTable.isNotEmpty && widget.isAdmin
-              ? FutureBuilder<bool>(
-            future: _shouldShowFinalButton(), // 🔽 비동기 체크 함수 추가
-            builder: (context, snapshot) {
-              if (!snapshot.hasData) return FloatingActionButton.extended(
-                onPressed: _showStartDialog,
-                icon: const Icon(Icons.replay),
-                label: const Text("리그전 새로 시작"),
-              );
-
-              final canShowFinal = snapshot.data!;
-
-              return Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  FloatingActionButton.extended(
-                    onPressed: _showStartDialog,
-                    icon: const Icon(Icons.replay),
-                    label: const Text("리그전 새로 시작"),
-                    backgroundColor: Colors.white,
+                    child: Center(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          for (var matches in filteredMatchTables)
+                            Center(
+                              child: Expanded(
+                                child: buildMatchTable(matches),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
                   ),
-                ],
-              );
-            },
-          )
-              : null,
+                  ]
+        ),
+        ),
+
+        floatingActionButton: matchTable.isNotEmpty && widget.isAdmin
+        ? FutureBuilder<bool>(
+        future: _shouldShowFinalButton(), // 🔽 비동기 체크 함수 추가
+        builder: (context, snapshot) {
+        if (!snapshot.hasData) return FloatingActionButton.extended(
+        onPressed: _showStartDialog,
+        icon: const Icon(Icons.replay),
+        label: const Text("리그전 새로 시작"),
+        );
+
+        final canShowFinal = snapshot.data!;
+
+        return Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+        FloatingActionButton.extended(
+        onPressed: _showStartDialog,
+        icon: const Icon(Icons.replay),
+        label: const Text("리그전 새로 시작"),
+        backgroundColor: Colors.white,
+        ),
+        ],
+        );
+        },
+        )
+        :
+        null
+        ,
 
         );
       },
@@ -169,7 +200,8 @@ abstract class MatchTableBaseState<T extends MatchTableBase> extends State<T> {
 
   /// 선택된 division의 A, B 그룹 경기가 모두 완료되었는지 확인
   Future<bool> isGroupStageCompleted(String gender, int division) async {
-    final matchMap = await _firestoreService.loadMatches(); // category_division[_group] 구조
+    final matchMap = await _firestoreService
+        .loadMatches(); // category_division[_group] 구조
 
     final groupAKey = "${gender}_${division}_A";
     final groupBKey = "${gender}_${division}_B";
@@ -177,8 +209,10 @@ abstract class MatchTableBaseState<T extends MatchTableBase> extends State<T> {
     final aMatches = matchMap[groupAKey] ?? [];
     final bMatches = matchMap[groupBKey] ?? [];
 
-    final allCompletedA = aMatches.isNotEmpty && aMatches.every((m) => m.isCompleted);
-    final allCompletedB = bMatches.isNotEmpty && bMatches.every((m) => m.isCompleted);
+    final allCompletedA = aMatches.isNotEmpty &&
+        aMatches.every((m) => m.isCompleted);
+    final allCompletedB = bMatches.isNotEmpty &&
+        bMatches.every((m) => m.isCompleted);
 
     return allCompletedA && allCompletedB;
   }
@@ -188,18 +222,19 @@ abstract class MatchTableBaseState<T extends MatchTableBase> extends State<T> {
   Future<void> _showStartDialog() async {
     final result = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text("리그전 시작"),
-        content: const Text("현재 팀 구성으로 리그전을 생성하시겠습니까?\n기존 경기 기록은 덮어쓰기됩니다."),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: const Text("취소")),
-          ElevatedButton(
-              onPressed: () => Navigator.pop(context, true),
-              child: const Text("예")),
-        ],
-      ),
+      builder: (context) =>
+          AlertDialog(
+            title: const Text("리그전 시작"),
+            content: const Text("현재 팀 구성으로 리그전을 생성하시겠습니까?\n기존 경기 기록은 덮어쓰기됩니다."),
+            actions: [
+              TextButton(
+                  onPressed: () => Navigator.pop(context, false),
+                  child: const Text("취소")),
+              ElevatedButton(
+                  onPressed: () => Navigator.pop(context, true),
+                  child: const Text("예")),
+            ],
+          ),
     );
 
     if (result == true) {
@@ -227,12 +262,14 @@ abstract class MatchTableBaseState<T extends MatchTableBase> extends State<T> {
   }
 
 
-  Future<void> _processCategory(String category, List<Team> teams, int maxDivision) async {
+  Future<void> _processCategory(String category, List<Team> teams,
+      int maxDivision) async {
     for (int division = 1; division <= maxDivision; division++) {
       final filtered = teams.where((t) => t.division == division).toList();
 
       if (filtered.length >= 6) {
-        final shouldSplit = await _askGroupSplit(category, division, filtered.length);
+        final shouldSplit = await _askGroupSplit(
+            category, division, filtered.length);
 
         if (shouldSplit) {
           _splitTeamsIntoGroups(filtered); // A, B 조 나누기
@@ -252,22 +289,23 @@ abstract class MatchTableBaseState<T extends MatchTableBase> extends State<T> {
     }
   }
 
-  Future<bool> _askGroupSplit(
-      String category, int division, int teamCount) async {
+  Future<bool> _askGroupSplit(String category, int division,
+      int teamCount) async {
     return await showDialog<bool>(
       context: context,
-      builder: (_) => AlertDialog(
-        title: Text("$category $division부"),
-        content: Text("팀 수가 $teamCount팀입니다.\nA/B조로 나누시겠습니까?"),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: const Text("단일 조")),
-          ElevatedButton(
-              onPressed: () => Navigator.pop(context, true),
-              child: const Text("A/B 조 나누기")),
-        ],
-      ),
+      builder: (_) =>
+          AlertDialog(
+            title: Text("$category $division부"),
+            content: Text("팀 수가 $teamCount팀입니다.\nA/B조로 나누시겠습니까?"),
+            actions: [
+              TextButton(
+                  onPressed: () => Navigator.pop(context, false),
+                  child: const Text("단일 조")),
+              ElevatedButton(
+                  onPressed: () => Navigator.pop(context, true),
+                  child: const Text("A/B 조 나누기")),
+            ],
+          ),
     ) ??
         false;
   }
@@ -301,76 +339,78 @@ abstract class MatchTableBaseState<T extends MatchTableBase> extends State<T> {
 
     showDialog(
       context: context,
-      builder: (_) => AlertDialog(
-        title: Text("${match.team1.id}  vs  ${match.team2.id}"),
-        content: SizedBox(
-          width: 300, // 다이얼로그 전체 너비 제한
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.only(right: 8.0),
-                  child: TextField(
-                    controller: team1Controller,
-                    decoration: InputDecoration(
-                      labelText: "${match.team1.id} 점수",
-                      contentPadding: EdgeInsets.symmetric(vertical: 12, horizontal: 12),
-                      isDense: true,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
+      builder: (_) =>
+          AlertDialog(
+            title: Text("${match.team1.id}  vs  ${match.team2.id}"),
+            content: SizedBox(
+              width: 300, // 다이얼로그 전체 너비 제한
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.only(right: 8.0),
+                      child: TextField(
+                        controller: team1Controller,
+                        decoration: InputDecoration(
+                          labelText: "${match.team1.id} 점수",
+                          contentPadding: EdgeInsets.symmetric(
+                              vertical: 12, horizontal: 12),
+                          isDense: true,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
                       ),
                     ),
                   ),
-                ),
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.only(left: 8.0),
+                      child: TextField(
+                        controller: team2Controller,
+                        decoration: InputDecoration(
+                          labelText: "${match.team2.id} 점수",
+                          contentPadding: EdgeInsets.symmetric(
+                              vertical: 12, horizontal: 12),
+                          isDense: true,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.only(left: 8.0),
-                  child: TextField(
-                    controller: team2Controller,
-                    decoration: InputDecoration(
-                      labelText: "${match.team2.id} 점수",
-                      contentPadding: EdgeInsets.symmetric(vertical: 12, horizontal: 12),
-                      isDense: true,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                  ),
-                ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text("취소"),
+              ),
+              TextButton(
+                onPressed: () {
+                  final t1 = int.tryParse(team1Controller.text);
+                  final t2 = int.tryParse(team2Controller.text);
+                  if (t1 != null && t2 != null) {
+                    _updateMatchScore(match, t1, t2, gender);
+                    Navigator.pop(context);
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text("유효한 점수를 입력해주세요")),
+                    );
+                  }
+                },
+                child: Text(match.isCompleted ? "수정" : "저장"),
               ),
             ],
           ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text("취소"),
-          ),
-          TextButton(
-            onPressed: () {
-              final t1 = int.tryParse(team1Controller.text);
-              final t2 = int.tryParse(team2Controller.text);
-              if (t1 != null && t2 != null) {
-                _updateMatchScore(match, t1, t2, gender);
-                Navigator.pop(context);
-              } else {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text("유효한 점수를 입력해주세요")),
-                );
-              }
-            },
-            child: Text(match.isCompleted ? "수정" : "저장"),
-          ),
-        ],
-      ),
     );
-
   }
 
-  Map<String, Map<String, dynamic>> calculateStats(
-      List<Match> matches, List<Team> teams) {
+  Map<String, Map<String, dynamic>> calculateStats(List<Match> matches,
+      List<Team> teams) {
     final stats = <String, Map<String, dynamic>>{};
     for (var team in teams) {
       stats[team.id] = {'wins': 0, 'diff': 0, 'team': team};
@@ -390,10 +430,11 @@ abstract class MatchTableBaseState<T extends MatchTableBase> extends State<T> {
       stats[t2]!['diff'] += s2 - s1;
     }
 
-    final sorted = [...stats.values]..sort((a, b) {
-      int w = (b['wins'] as int).compareTo(a['wins'] as int);
-      return w != 0 ? w : (b['diff'] as int).compareTo(a['diff'] as int);
-    });
+    final sorted = [...stats.values]
+      ..sort((a, b) {
+        int w = (b['wins'] as int).compareTo(a['wins'] as int);
+        return w != 0 ? w : (b['diff'] as int).compareTo(a['diff'] as int);
+      });
 
     for (int i = 0; i < sorted.length; i++) {
       final id = (sorted[i]['team'] as Team).id;
@@ -436,13 +477,26 @@ abstract class MatchTableBaseState<T extends MatchTableBase> extends State<T> {
   Icon getCourtIcon(int courtNumber) {
     const double iconSize = 20;
     switch (courtNumber) {
-      case 1: return const Icon(Icons.looks_one_outlined, size: iconSize, color: Colors.blue);
-      case 2: return const Icon(Icons.looks_two_outlined, size: iconSize, color: Colors.blue);
-      case 3: return const Icon(Icons.looks_3_outlined, size: iconSize, color: Colors.blue);
-      case 4: return const Icon(Icons.looks_4_outlined, size: iconSize, color: Colors.blue);
-      case 5: return const Icon(Icons.looks_5_outlined, size: iconSize, color: Colors.blue);
-      case 6: return const Icon(Icons.looks_6_outlined, size: iconSize, color: Colors.blue);
-      default: return const Icon(Icons.error, size: iconSize, color: Colors.red);
+      case 1:
+        return const Icon(
+            Icons.looks_one_outlined, size: iconSize, color: Colors.blue);
+      case 2:
+        return const Icon(
+            Icons.looks_two_outlined, size: iconSize, color: Colors.blue);
+      case 3:
+        return const Icon(
+            Icons.looks_3_outlined, size: iconSize, color: Colors.blue);
+      case 4:
+        return const Icon(
+            Icons.looks_4_outlined, size: iconSize, color: Colors.blue);
+      case 5:
+        return const Icon(
+            Icons.looks_5_outlined, size: iconSize, color: Colors.blue);
+      case 6:
+        return const Icon(
+            Icons.looks_6_outlined, size: iconSize, color: Colors.blue);
+      default:
+        return const Icon(Icons.error, size: iconSize, color: Colors.red);
     }
   }
 }

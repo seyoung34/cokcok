@@ -362,7 +362,12 @@ abstract class TournamentUnifiedPageState<T extends TournamentUnifiedPage>
                         width: MediaQuery.of(context).size.width,
                         height: MediaQuery.of(context).size.height * 0.9,
                         padding: const EdgeInsets.all(16),
-                        color: Colors.green.shade100,
+                        margin: EdgeInsets.all(8),
+                        // color: Colors.green.shade100,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(16),
+                          color: Colors.white70,
+                        ),
                         child: TournamentBracket(
                           key: ValueKey(selectedCategory),
                           list: rounds,

@@ -72,13 +72,36 @@ abstract class MatchStatusBaseState<T extends MatchStatusBase> extends State<T> 
 
 
         return SingleChildScrollView(
-          child: Column(
-            children: [
-              _buildCourtsGrid(ongoingMatches),
-              const SizedBox(height: 20),
-              const Text("대기 팀", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-              ...waitingMatches.map(_buildWaitingCard).toList(),
-            ],
+          child: Center(
+            child: Container(
+              margin: EdgeInsets.all(4),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(16),
+                color: Colors.white,
+              ),
+              width: (double.infinity >= 600) ? 600 : double.infinity,
+              child: Column(
+                children: [
+                  _buildCourtsGrid(ongoingMatches),
+                  const SizedBox(height: 20),
+                  Center(
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Text("대기 팀", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+                        InkWell(
+                          onTap: (){
+                            _showImageDialog(context,"assets/images/yewon2.png");
+                          },
+                          child: Image.asset("assets/images/shuttlecock.png",width: 30,)
+                        )
+                      ],
+                    ),
+                  ),
+                  ...waitingMatches.map(_buildWaitingCard).toList(),
+                ],
+              ),
+            ),
           ),
         );
       },
@@ -104,11 +127,18 @@ abstract class MatchStatusBaseState<T extends MatchStatusBase> extends State<T> 
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(8),
                 border: Border.all(color: Colors.grey),
-                color: Colors.grey[300],
+                image: const DecorationImage(
+                  image: AssetImage("assets/images/cokcok_image.png"),
+                  fit: BoxFit.cover,
+                  colorFilter: ColorFilter.mode(
+                    Colors.white60, // 어두운 오버레이로 글자 가독성 향상
+                    BlendMode.darken,
+                  ),
+                ),
               ),
-              child: const Center(
-                child: Text("막혀있음\n(사용 불가)", textAlign: TextAlign.center),
-              ),
+              // child: const Center(
+              //   child: Text("막혀있음\n(사용 불가)", textAlign: TextAlign.center),
+              // ),
             );
           }
 
@@ -148,13 +178,13 @@ abstract class MatchStatusBaseState<T extends MatchStatusBase> extends State<T> 
           return LayoutBuilder(
             builder: (context, constraints) {
               double width = constraints.maxWidth;
-              double fontSize = width * 0.06; // 예: 100px일 때 약 9px
+              double fontSize = width * 0.08; // 예: 100px일 때 약 9px
               double labelSize = width * 0.09;
-              double gap = width * 0.03
+              double gap = width * 0.02
               ;
 
               return Container(
-                margin: EdgeInsets.all(10),
+                margin: EdgeInsets.all(8),
                 padding: EdgeInsets.symmetric(horizontal: gap, vertical: gap),
                 decoration: BoxDecoration(
                   color: backgroundColor,
@@ -164,7 +194,7 @@ abstract class MatchStatusBaseState<T extends MatchStatusBase> extends State<T> 
                 child: isEmpty
                 ? Center(
                   child: Text(
-                    "코트 $courtNum\n(비어 있음)",
+                    "코트 $courtNum",
                     textAlign: TextAlign.center,
                     style: TextStyle(fontSize: labelSize),
                   ),
@@ -308,4 +338,33 @@ abstract class MatchStatusBaseState<T extends MatchStatusBase> extends State<T> 
       ),
     );
   }
+
+  void _showImageDialog(BuildContext context, String imagePath) {
+    showDialog(
+      context: context,
+      builder: (_) => Dialog(
+        backgroundColor: Colors.transparent,
+        insetPadding: const EdgeInsets.all(16),
+        child: Stack(
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: Image.asset(imagePath, fit: BoxFit.contain),
+            ),
+            Positioned(
+              top: 8,
+              right: 8,
+              child: IconButton(
+                icon: const Icon(Icons.close, color: Colors.white),
+                onPressed: () => Navigator.of(context).pop(),
+              ),
+            )
+          ],
+        ),
+      ),
+    );
+  }
+
+
+
 }

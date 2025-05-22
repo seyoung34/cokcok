@@ -63,7 +63,7 @@ class _HomePageState extends State<HomePage> {
           ),
           TextButton(
             onPressed: () {
-              if (passwordController.text == "1234") {
+              if (passwordController.text == "122333") {
                 setState(() => isAdmin = true);
                 Navigator.pop(context);
               } else {
@@ -156,35 +156,39 @@ class _HomePageState extends State<HomePage> {
               topLeft: Radius.circular(20),
               topRight: Radius.circular(20),
             ),
-            child: BottomNavigationBar(
-              type: BottomNavigationBarType.fixed,
-              backgroundColor: Colors.yellow.shade100,
-              fixedColor: Colors.green.shade500,
-              currentIndex: selectedIndex,
-              onTap: (index) => setState(() => selectedIndex = index),
-              items: isAdmin
-                  ? const [
-                      BottomNavigationBarItem(
-                          icon: Icon(Icons.people), label: '참가자'),
-                      BottomNavigationBarItem(
-                          icon: Icon(Icons.groups), label: '팀 구성'),
-                      BottomNavigationBarItem(
-                          icon: Icon(Icons.sports_tennis), label: '예선 점수표'),
-                      BottomNavigationBarItem(
-                        icon: Icon(Icons.emoji_events), label: '토너먼트',),
-                      BottomNavigationBarItem(
-                          icon: Icon(Icons.personal_video), label: '상황판'),
-                    ]
-                  : const [
-                      BottomNavigationBarItem(
-                          icon: Icon(Icons.groups), label: '팀 구성'),
-                      BottomNavigationBarItem(
-                          icon: Icon(Icons.sports_tennis), label: '예선 점수표'),
-                      BottomNavigationBarItem(
-                        icon: Icon(Icons.emoji_events), label: '토너먼트',),
-                      BottomNavigationBarItem(
-                          icon: Icon(Icons.personal_video), label: '상황판'),
-                    ],
+            child: SizedBox(
+              height: 60,
+              child: BottomNavigationBar(
+                type: BottomNavigationBarType.fixed,
+                elevation: 8,
+                backgroundColor: Color(0xFFFFFDE7),
+                fixedColor: Colors.green.shade500,
+                currentIndex: selectedIndex,
+                onTap: (index) => setState(() => selectedIndex = index),
+                items: isAdmin
+                    ? const [
+                        BottomNavigationBarItem(
+                            icon: Icon(Icons.people), label: '참가자'),
+                        BottomNavigationBarItem(
+                            icon: Icon(Icons.groups), label: '팀 구성'),
+                        BottomNavigationBarItem(
+                            icon: Icon(Icons.sports_tennis), label: '예선 점수표'),
+                        BottomNavigationBarItem(
+                          icon: Icon(Icons.emoji_events), label: '토너먼트',),
+                        BottomNavigationBarItem(
+                            icon: Icon(Icons.personal_video), label: '상황판'),
+                      ]
+                    : const [
+                        BottomNavigationBarItem(
+                            icon: Icon(Icons.groups), label: '팀 구성'),
+                        BottomNavigationBarItem(
+                            icon: Icon(Icons.sports_tennis), label: '예선 점수표'),
+                        BottomNavigationBarItem(
+                          icon: Icon(Icons.emoji_events), label: '토너먼트',),
+                        BottomNavigationBarItem(
+                            icon: Icon(Icons.personal_video), label: '상황판'),
+                      ],
+              ),
             ),
           ),
         ));
