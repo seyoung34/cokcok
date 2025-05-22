@@ -464,7 +464,7 @@ class FirestoreService {
     final g2 = m.team1.players[1].gender;
     if (g1 != g2) return 0;       // 혼성 먼저
     if (g1 == "남성") return 1;   // 남성 그다음
-    if (g1 == "여성") return 2;   // 여성 마지막
+    if (g1 == "여성") return 1;   // 여성 마지막
     return 3;                     // 그 외 (예외처리용)
   }
 

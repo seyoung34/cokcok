@@ -33,4 +33,14 @@ class Player {
     division: json['부'],
     isMixed: json['혼복참여여부']
   );
+
+  static Player empty() => Player(
+    name: "빈자리",
+    gender: "미정",
+    rank: 0,
+    isMixed: false,
+    division: 0,
+  );
+
+
 }

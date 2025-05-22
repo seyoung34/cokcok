@@ -178,6 +178,9 @@ class _AdminTeamPageState extends TeamPageBaseState<AdminTeamPage> {
     List<Team> newMaleTeams = _createTeams(males);
     List<Team> newFemaleTeams = _createTeams(females);
     List<Team> newMixedTeams = _createMixedTeams(males, females, onlyMixed);
+    for(int i =0; i < newMixedTeams.length; i++){
+      print("$i번 ${newMixedTeams[i].id}");
+    }
 
     setState(() {
       maleTeams = newMaleTeams;
@@ -389,10 +392,11 @@ class _AdminTeamPageState extends TeamPageBaseState<AdminTeamPage> {
   }*/
 
 
-  List<Team> _createMixedTeams(List<Player> males, List<Player> females, List<Player> onlyMixed) {
+  /*List<Team> _createMixedTeams(List<Player> males, List<Player> females, List<Player> onlyMixed) {
     final mixedMales = males.where((p) => p.isMixed).toList();
     final mixedFemales = females.where((p) => p.isMixed).toList();
     final addMixed = onlyMixed.where((p) => p.isMixed).toList();
+    print("mixedMales : ${mixedMales.length}, mixedFemales : ${mixedFemales.length}, addMixed : ${addMixed.length}");
 
     List<Team> result = [];
 
@@ -415,6 +419,46 @@ class _AdminTeamPageState extends TeamPageBaseState<AdminTeamPage> {
         Team(
           id: "혼성-${mixedTeamStartIndex + (i ~/ 2)}_${addMixed[i].name}-${addMixed[i + 1].name}",
           players: [addMixed[i], addMixed[i + 1]],
+          division: 1,
+        ),
+      );
+    }
+
+    print("혼성 팀 수: ${result.length}");
+    return result;
+  }*/
+
+  List<Team> _createMixedTeams(List<Player> males, List<Player> females, List<Player> onlyMixed) {
+    final mixedMales = males.where((p) => p.isMixed).toList();
+    final mixedFemales = females.where((p) => p.isMixed).toList();
+    final addMixed = onlyMixed.where((p) => p.isMixed).toList();
+
+    print("mixedMales: ${mixedMales.length}, mixedFemales: ${mixedFemales.length}, addMixed: ${addMixed.length}");
+
+    List<Player> allPlayers = [...mixedMales, ...mixedFemales, ...addMixed];
+    allPlayers.shuffle(); // 무작위 조합
+
+    List<Team> result = [];
+    int teamNumber = 1;
+
+    for (int i = 0; i + 1 < allPlayers.length; i += 2) {
+      result.add(
+        Team(
+          id: "혼성-${teamNumber}_${allPlayers[i].name}-${allPlayers[i + 1].name}",
+          players: [allPlayers[i], allPlayers[i + 1]],
+          division: 1,
+        ),
+      );
+      teamNumber++;
+    }
+
+    // 남은 1명이 있다면, 혼자라도 팀에 포함
+    if (allPlayers.length % 2 == 1) {
+      final solo = allPlayers.last;
+      result.add(
+        Team(
+          id: "혼성-${teamNumber}_${solo.name}-빈자리",
+          players: [solo, Player.empty()], // 빈 플레이어로 채움
           division: 1,
         ),
       );

@@ -148,12 +148,13 @@ abstract class MatchStatusBaseState<T extends MatchStatusBase> extends State<T> 
           return LayoutBuilder(
             builder: (context, constraints) {
               double width = constraints.maxWidth;
-              double fontSize = width * 0.09; // 예: 100px일 때 약 9px
-              double labelSize = width * 0.1;
-              double gap = width * 0.03;
+              double fontSize = width * 0.06; // 예: 100px일 때 약 9px
+              double labelSize = width * 0.09;
+              double gap = width * 0.03
+              ;
 
               return Container(
-                margin: EdgeInsets.all(4),
+                margin: EdgeInsets.all(10),
                 padding: EdgeInsets.symmetric(horizontal: gap, vertical: gap),
                 decoration: BoxDecoration(
                   color: backgroundColor,
@@ -174,30 +175,27 @@ abstract class MatchStatusBaseState<T extends MatchStatusBase> extends State<T> 
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: [
                         Text(
-                          "$gender $divisionLabel",
+                          gender =="혼성" ? "혼성 복식" : "$gender $divisionLabel",
                           style: TextStyle(fontSize: labelSize, fontWeight: FontWeight.normal),
                         ),
                         if (widget.isAdmin)
-                          Positioned(
-                            top: 0,
-                            right: 0,
-                            child: IconButton(
-                              icon: Icon(Icons.logout, size: fontSize),
-                              tooltip: "퇴장",
-                              onPressed: () async {
-                                await _firestoreService.updateMatchCourt(
-                                  match.id,
-                                  null,
-                                  gender == "혼성" ? "혼성 토너먼트" : gender,
-                                  match.group != null
-                                      ? "${match.division}_${match.group}"
-                                      : match.division.toString(),
-                                );
-                              },
-                            ),
+                          IconButton(
+                            icon: Icon(Icons.logout_outlined, size: fontSize),
+                            tooltip: "퇴장",
+                            onPressed: () async {
+                              await _firestoreService.updateMatchCourt(
+                                match.id,
+                                null,
+                                gender == "혼성" ? "혼성 토너먼트" : gender,
+                                match.group != null
+                                    ? "${match.division}_${match.group}"
+                                    : match.division.toString(),
+                              );
+                            },
                           ),
                       ],
                     ),
+
                     const SizedBox(height: 6),
                     Expanded(
                       child: Row(
@@ -207,8 +205,15 @@ abstract class MatchStatusBaseState<T extends MatchStatusBase> extends State<T> 
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Text(match.team1.players[0].name, style: TextStyle(fontSize: fontSize)),
-                                Text(match.team1.players[1].name, style: TextStyle(fontSize: fontSize)),
+                                Text(
+                                  match.team1.players.length > 0 ? match.team1.players[0].name : "빈자리",
+                                  style: TextStyle(fontSize: fontSize),
+                                ),
+                                Text(
+                                  match.team1.players.length > 1 ? match.team1.players[1].name : "빈자리",
+                                  style: TextStyle(fontSize: fontSize),
+                                ),
+
                               ],
                             ),
                           ),
@@ -245,7 +250,14 @@ abstract class MatchStatusBaseState<T extends MatchStatusBase> extends State<T> 
     final gender = match.team1.players[0].gender == match.team1.players[1].gender ? match.team1.players[0].gender : "혼성 토너먼트";
     final division = match.group != null ? "${match.division}_${match.group}" : match.division.toString();
 
-    final label = "$gender ${division}부";
+    String label;
+    if(gender == "혼성 토너먼트"){
+      label = "혼성 복식";
+    }
+    else{
+      label = "$gender ${division}부";
+    }
+
 
     return Card(
       color:gender == "남성" ? Colors.blue.shade100 : gender == "여성"? Colors.pink.shade100 : Colors.green.shade100,

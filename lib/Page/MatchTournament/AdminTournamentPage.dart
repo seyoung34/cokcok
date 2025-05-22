@@ -70,8 +70,11 @@ class AdminTournamentPageState extends TournamentUnifiedPageState<AdminTournamen
   }
 
   void _showScoreDialog(Match match) {
-    final teamAController = TextEditingController(text: match.team1Score?.toString() ?? "");
-    final teamBController = TextEditingController(text: match.team2Score?.toString() ?? "");
+    // final teamAController = TextEditingController(text: match.team1Score?.toString() ?? "");
+    // final teamBController = TextEditingController(text: match.team2Score?.toString() ?? "");
+
+    final teamAController = TextEditingController();
+    final teamBController = TextEditingController();
 
     showDialog(
       context: context,

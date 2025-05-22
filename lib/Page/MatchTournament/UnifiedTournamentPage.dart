@@ -349,38 +349,35 @@ abstract class TournamentUnifiedPageState<T extends TournamentUnifiedPage>
                     return const Center(child: Text("아직 생성되지 않음"));
                   }
 
-                  return Scrollbar(
-                    controller: horizontalController,
-                    thumbVisibility: false,
-                    child: SingleChildScrollView(
-                      controller: horizontalController,
-                      scrollDirection: Axis.horizontal,
-                      child: Scrollbar(
-                        thumbVisibility: false,
-                        controller: verticalController,
-                        child: SingleChildScrollView(
-                            scrollDirection: Axis.vertical,
-                            controller: verticalController,
-                            child: Container(
-                              width: MediaQuery.of(context).size.width,
-                              height: MediaQuery.of(context).size.height*0.9,
-                              color: Colors.green.shade100,
-                              padding: const EdgeInsets.all(16),
-                              child: TournamentBracket(
-                                key: ValueKey(selectedCategory),
-                                list: rounds,
-                                card: buildMatchCard,
-                                cardWidth: 220,
-                                cardHeight: 100,
-                                itemsMarginVertical: 20,
-                                lineWidth: 80,
-                                lineThickness: 4,
-                                lineColor: Colors.green,
-                              ),
-                            )),
+                  return Expanded(
+                    child: InteractiveViewer(
+                      panEnabled: true, //이게 뭘까..
+                      scaleEnabled: true,
+                      constrained: false,
+                      clipBehavior: Clip.none,
+                      boundaryMargin: const EdgeInsets.all(32),
+                      minScale: 0.5,
+                      maxScale: 2.5,
+                      child: Container(
+                        width: MediaQuery.of(context).size.width,
+                        height: MediaQuery.of(context).size.height * 0.9,
+                        padding: const EdgeInsets.all(16),
+                        color: Colors.green.shade100,
+                        child: TournamentBracket(
+                          key: ValueKey(selectedCategory),
+                          list: rounds,
+                          card: buildMatchCard,
+                          cardWidth: 220,
+                          cardHeight: 100,
+                          itemsMarginVertical: 20,
+                          lineWidth: 80,
+                          lineThickness: 4,
+                          lineColor: Colors.green,
+                        ),
                       ),
                     ),
                   );
+
                 },
               ),
             ),
