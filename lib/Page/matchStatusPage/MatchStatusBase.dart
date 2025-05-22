@@ -40,26 +40,36 @@ abstract class MatchStatusBaseState<T extends MatchStatusBase> extends State<T> 
 
         allMatches = snapshot.data!;
 
-        // 진행 중 + 대기 경기 분류 (기존 로직 유지)
-        final ongoingMatches = allMatches.where((m) => m.courtNumber != null && !m.isCompleted).toList();
-        final activeTeamIds = ongoingMatches.expand((m) => [m.team1.id, m.team2.id]).toSet();
+        // 진행 중인 경기에서 출전 중인 선수 이름 추출
+        final ongoingMatches = allMatches
+            .where((m) => m.courtNumber != null && !m.isCompleted)
+            .toList();
+
+        final activePlayerNames = ongoingMatches
+            .expand((m) => [...m.team1.players, ...m.team2.players])
+            .map((p) => p.name)
+            .toSet();
 
         final waitingMatches = <Match>[];
-        final waitingTeamIds = <String>{};
+        final waitingPlayerNames = <String>{};
 
         for (var match in allMatches) {
           if (match.courtNumber == null && !match.isCompleted) {
-            if (activeTeamIds.contains(match.team1.id) ||
-                activeTeamIds.contains(match.team2.id) ||
-                waitingTeamIds.contains(match.team1.id) ||
-                waitingTeamIds.contains(match.team2.id)) continue;
+            final teamPlayers = [...match.team1.players, ...match.team2.players];
+            final names = teamPlayers.map((p) => p.name);
+
+            // 진행 중이거나 대기 중인 선수와 겹치면 제외
+            if (names.any((name) =>
+            activePlayerNames.contains(name) ||
+                waitingPlayerNames.contains(name))) continue;
 
             waitingMatches.add(match);
-            waitingTeamIds.add(match.team1.id);
-            waitingTeamIds.add(match.team2.id);
-            if (waitingMatches.length >= 3) break;
+            waitingPlayerNames.addAll(names);
+
+            if (waitingMatches.length >= 6) break;
           }
         }
+
 
         return SingleChildScrollView(
           child: Column(

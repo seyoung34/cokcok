@@ -37,7 +37,7 @@ abstract class MatchTableBaseState<T extends MatchTableBase> extends State<T> {
   @override
   Widget build(BuildContext context) {
     return StreamBuilder<List<Match>>(
-      stream: _firestoreService.watchAllMatches(),
+      stream: _firestoreService.watchLeagueMatches(),
       builder: (context, snapshot) {
         if (!snapshot.hasData)
           return const Center(child: CircularProgressIndicator());

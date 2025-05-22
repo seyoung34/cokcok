@@ -41,7 +41,7 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  bool isAdmin = true;
+  bool isAdmin = false;
   int selectedIndex = 1;
 
   void _showAdminDialog() {
@@ -99,7 +99,7 @@ class _HomePageState extends State<HomePage> {
           ),
           TextButton(
             onPressed: () {
-              if (passwordController.text == "1234") {
+              if (passwordController.text == "12345") {
                 setState(() => isAdmin = false);
                 Navigator.pop(context);
               } else {
@@ -171,7 +171,7 @@ class _HomePageState extends State<HomePage> {
                       BottomNavigationBarItem(
                           icon: Icon(Icons.sports_tennis), label: '예선 점수표'),
                       BottomNavigationBarItem(
-                        icon: Icon(Icons.emoji_events), label: '본선 토너먼트',),
+                        icon: Icon(Icons.emoji_events), label: '토너먼트',),
                       BottomNavigationBarItem(
                           icon: Icon(Icons.personal_video), label: '상황판'),
                     ]
@@ -181,7 +181,7 @@ class _HomePageState extends State<HomePage> {
                       BottomNavigationBarItem(
                           icon: Icon(Icons.sports_tennis), label: '예선 점수표'),
                       BottomNavigationBarItem(
-                        icon: Icon(Icons.emoji_events), label: '본선 토너먼트',),
+                        icon: Icon(Icons.emoji_events), label: '토너먼트',),
                       BottomNavigationBarItem(
                           icon: Icon(Icons.personal_video), label: '상황판'),
                     ],
