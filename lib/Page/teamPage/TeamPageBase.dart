@@ -22,7 +22,7 @@ abstract class TeamPageBaseState<T extends TeamPageBase> extends State<T> {
   String? selectedCategory = "남성";
   Map<String, int> divisionCounts = {};
 
-  String VERSION = "v1.0.0";
+  String VERSION = "v1.1.0";
 
   @override
   void dispose() {

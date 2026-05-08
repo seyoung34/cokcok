@@ -157,7 +157,7 @@ class _HomePageState extends State<HomePage> {
               topRight: Radius.circular(20),
             ),
             child: SizedBox(
-              height: 60,
+              height: 58,
               child: BottomNavigationBar(
                 type: BottomNavigationBarType.fixed,
                 elevation: 8,

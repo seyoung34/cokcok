@@ -726,10 +726,19 @@ class FirestoreService {
 
 
   Future<void> updateMatchCourt(String matchId, int? courtNumber, String gender, String division) async {
-    print("matchId : ${matchId}, courtNumber : ${courtNumber}, gender : ${gender}, division : ${division}");
-    if(gender == "혼성 토너먼트"){
+    print("matchId : $matchId, courtNumber : $courtNumber, gender : $gender, division : $division");
+
+    // 🔹 혼성 토너먼트는 division 고정
+    if (gender == "혼성 토너먼트") {
       division = "1";
     }
+
+    // 🔸 남성 본선일 경우 division이 "숫자_roundX" 형태일 수 있음
+    else if (gender == "남성" && RegExp(r'^\d+_round\d+$').hasMatch(division)) {
+      final divNum = division.split("_").first;
+      division = "본선_$divNum";
+    }
+
     await _db
         .collection("경기 기록")
         .doc("콕콕 리그전")
@@ -739,6 +748,7 @@ class FirestoreService {
         .doc(matchId)
         .update({'courtNumber': courtNumber});
   }
+
 
 
 

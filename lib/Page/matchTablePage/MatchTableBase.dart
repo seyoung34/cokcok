@@ -125,18 +125,24 @@ abstract class MatchTableBaseState<T extends MatchTableBase> extends State<T> {
                   Expanded(
                     child: Center(
                       child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
                         children: [
                           for (var matches in filteredMatchTables)
-                            Center(
-                              child: Expanded(
-                                child: buildMatchTable(matches),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                              child: Align(
+                                alignment: Alignment.center,
+                                child: ConstrainedBox(
+                                  constraints: const BoxConstraints(maxWidth: 1200),
+                                  child: buildMatchTable(matches),
+                                ),
                               ),
                             ),
                         ],
                       ),
                     ),
                   ),
+
                   ]
         ),
         ),

@@ -78,12 +78,14 @@ class _UserMatchTablePageState extends MatchTableBaseState<UserMatchTablePage> {
                       }
 
                       return DataCell(
-                        InkWell(
-                          child: () {
-                            if (match.courtNumber != null) {
-                              return getCourtIcon(match.courtNumber!);
-                            }
-                          }(),
+                        Center(
+                          child: InkWell(
+                            child: () {
+                              if (match.courtNumber != null) {
+                                return getCourtIcon(match.courtNumber!);
+                              }
+                            }(),
+                          ),
                         ),
                       );
                     }),
